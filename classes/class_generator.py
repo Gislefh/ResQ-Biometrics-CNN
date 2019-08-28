@@ -4,6 +4,7 @@ import os
 import cv2
 import matplotlib.pyplot as plt
 from scipy import ndimage
+from class_utils import one_hot
 class Generator:
 
 
@@ -51,18 +52,21 @@ class Generator:
 			image_list = np.array(image_list)
 
 			for i in range(len(image_list)):
-				image = cv2.imread( np.random.choice( image_list[:, 0]))[:, :, 0:1]
+				choice = np.random.choice(len(image_list[:, 0]))
+				image = cv2.imread( image_list[choice, 0])[:, :, 0:1]
+				label = int(image_list[choice, 1])
+
 
 				if image.shape != self.X[0].shape:
-					self.X[i%20] = self.__im_reshape(image.shape, image)
+					self.X[i%self.batch_size] = self.__im_reshape(image.shape, image)
 				else:
-					self.X[i%20] = image
+					self.X[i%self.batch_size] = image
 
-				Y[i%20] = []
+				self.Y[i%self.batch_size] = one_hot(label, self.N_classes)
 
-				if i%20 == self.batch_size -1:
-					return self.X
-					#yield(X, Y)
+				if i%self.batch_size == self.batch_size -1:
+					#return self.X, self.Y
+					yield(self.X, self.Y)
 
 		
 
