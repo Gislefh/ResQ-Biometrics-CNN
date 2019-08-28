@@ -26,7 +26,7 @@ def get_vgg16_from_keras(input_shape, N_classes):
 			inp_shape = None
 
 		else:
-			inc_top = False
+			inc_top = True
 			inp_shape = input_shape
 
 		model = keras.applications.vgg16.VGG16(include_top=inc_top, weights= None, input_tensor=None, input_shape=inp_shape, pooling=None, classes=N_classes)

@@ -53,7 +53,11 @@ class Generator:
 
 			for i in range(len(image_list)):
 				choice = np.random.choice(len(image_list[:, 0]))
-				image = cv2.imread( image_list[choice, 0])[:, :, 0:1]
+				image = cv2.imread( image_list[choice, 0])[:, :, 0:self.N_classes+1]
+
+				# normalize
+				image = image / 255
+
 				label = int(image_list[choice, 1])
 
 
