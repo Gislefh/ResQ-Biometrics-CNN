@@ -13,17 +13,9 @@ class Model:
 	def __init__(self, N_classes):
 		self.N_classes = N_classes
 
-	def get_vgg16_from_keras(self, input_shape):
-		if input_shape == None:
-			inc_top = True
-			inp_shape = None
 
-		else:
-			inc_top = False
-			inp_shape = input_shape
 
-		self.model = keras.applications.vgg16.VGG16(include_top=inc_top, weights= None, input_tensor=None, input_shape=inp_shape, pooling=None, classes=self.N_classes)
-		return self.model
+	def dynamic_model(input_shape, kernel_sizes, dropout, ):
 
 
 	def compile_model(self, loss = 'categorical_crossentropy', optimizer = 'adam', metrics = ['acc']):
