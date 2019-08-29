@@ -11,8 +11,8 @@ import keras
 
 path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\training_set\\training_set'
 N_channels = 3
-batch_size = 10
-image_shape = (130, 130)
+batch_size = 32
+image_shape = (150, 150)
 N_classes = 2
 X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
@@ -23,12 +23,12 @@ gen = Generator(path, X_shape, Y_shape, N_classes, N_channels, batch_size)
 batch_gen = gen.generator_from_dir()
 
 
-#m = SecModel(N_classes)
-#model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], 1))
-#model.summary()
-
-model = get_vgg16_from_keras(input_shape = (image_shape[0], image_shape[1], N_channels), N_classes = N_classes) 
+m = SecModel(N_classes)
+model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], N_channels))
 model.summary()
+
+#model = get_vgg16_from_keras(input_shape = (image_shape[0], image_shape[1], N_channels), N_classes = N_classes) 
+#model.summary()
 
 
 model.compile(loss='categorical_crossentropy',
