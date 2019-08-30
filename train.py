@@ -9,10 +9,10 @@ from class_utils import get_vgg16_from_keras
 import keras
 
 
-path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\training_set\\training_set'
-N_channels = 3
-batch_size = 32
-image_shape = (150, 150)
+path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\face-expression-recognition-dataset\\images\\train'
+N_channels = 1
+batch_size = 16
+image_shape = (100, 100)
 N_classes = 2
 X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
@@ -20,7 +20,7 @@ Y_shape = (batch_size, N_classes)
 
 gen = Generator(path, X_shape, Y_shape, N_classes, N_channels, batch_size)
 
-batch_gen = gen.generator_from_dir()
+batch_gen = gen.generator_from_dir(include_folder_list = ['angry', 'neutral'])
 
 
 m = SecModel(N_classes)

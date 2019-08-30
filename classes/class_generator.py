@@ -5,6 +5,18 @@ import cv2
 import matplotlib.pyplot as plt
 from scipy import ndimage
 from class_utils import one_hot
+
+from pytictoc import TicToc
+import dlib
+import csv
+import requests
+
+#sys.path.insert(0, "C:\\Users\\47450\\Documents\\ResQ Biometrics\\ResQ-Biometrics-Model-1\\classes")
+#from class_faceDetection import FaceDetection
+
+
+
+
 class Generator:
 
 
@@ -31,12 +43,12 @@ class Generator:
 
 
 
-	def generator_from_dir(self):
+	def generator_from_dir(self, include_folder_list = []):
 
 
-		if self.N_classes != len(os.listdir(self.path)):
-			print('the number of classes does not match the number of folders')
-			return None
+		#if self.N_classes != len(os.listdir(self.path)):
+		#	print('the number of classes does not match the number of folders')
+		#	return None
 
 		self.X = np.zeros(self.X_shape)
 		self.Y = np.zeros(self.Y_shape)
@@ -45,20 +57,29 @@ class Generator:
 		while True:
 
 			image_list = []
-
-			for class_, folder in enumerate(os.listdir(self.path)):
+			class_ = 0
+			for folder in os.listdir(self.path):
+				if include_folder_list:
+					if folder not in include_folder_list:
+						continue
+					
 				for image_ in os.listdir(self.path +'/' +folder):
 					image_list.append([self.path + '/' + folder +'/' +image_, class_])
+				
+				class_ += 1
+
 			image_list = np.array(image_list)
 
 			for i in range(len(image_list)):
 				choice = np.random.choice(len(image_list[:, 0]))
-				image = cv2.imread( image_list[choice, 0])[:, :, 0:self.N_classes+1]
-
+				image = cv2.imread( image_list[choice, 0])[:, :, 0:self.N_channels]
+				
+				
 				# normalize
 				image = image / 255
 
 				label = int(image_list[choice, 1])
+				
 
 
 				if image.shape != self.X[0].shape:
@@ -66,7 +87,10 @@ class Generator:
 				else:
 					self.X[i%self.batch_size] = image
 
-				self.Y[i%self.batch_size] = one_hot(label, self.N_classes)
+				self.Y[i%self.batch_size] = one_hot(label, len(np.unique(image_list[:,1])))
+
+				#image_list = np.delete(image_list, choice, 0)
+
 
 				if i%self.batch_size == self.batch_size -1:
 					#return self.X, self.Y
@@ -74,7 +98,74 @@ class Generator:
 
 		
 
+	def generator_from_web(self):
 
+		#X_trip = np.zeros((self.X_shape[1] * 3, self.X_shape[2], self.X_shape[3]))
+
+
+		url = ""
+		prev_url = ""
+
+		with open(self.path, "r") as f:
+
+			csv_reader = csv.reader(f, delimiter=",")
+			counter = 0
+			for row in csv_reader:
+
+
+
+				if row[15] !='ONE_CLASS_TRIPLET':
+					continue
+
+				
+				for row_inc in range(3):
+					url = row[row_inc * 5]
+
+					
+
+					
+					if url != prev_url:
+						decoded = cv2.imdecode(np.frombuffer(requests.get(url).content, np.uint8), -1)
+
+						if len(np.shape(decoded)) != 3:
+							counter += 1
+							prev_url = url
+							continue
+						bb = []
+						x1 = int(float(row[row_inc * 5 + 1]) * decoded.shape[1])
+						x2 = int(float(row[row_inc * 5 + 2]) * decoded.shape[1])
+
+						y1 = int(float(row[row_inc * 5 + 3]) * decoded.shape[0])
+						y2 = int(float(row[row_inc * 5 + 4]) * decoded.shape[0])
+
+
+						
+						image = cv2.cvtColor(decoded, cv2.COLOR_BGR2RGB)
+						image = image[y1:y2, x1:x2]
+						image = self.__im_reshape(image.shape, image)
+
+						#detector = dlib.get_frontal_face_detector()
+						#gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+						#faces = detector(gray, 1)
+
+						#print(faces)
+						plt.figure(row_inc)
+						plt.imshow(image)
+						#plt.show()
+						
+
+
+
+						counter += 1
+						prev_url = url
+
+						print(counter)
+						if counter > 100:
+							exit()
+				plt.show()				
+
+
+			
 
 	def image_aug(self):
 		pass
@@ -84,9 +175,11 @@ class Generator:
 			
 	#		yield (X, Y)
 
-"""
+
 	# TODO fix this
 	def generator_from_zip(self):
+		pass
+		"""
 		file_name = 'face-expression-recognition-dataset.zip'
 		cnt = 0
 		tot_cnt = 0
@@ -161,5 +254,6 @@ class Generator:
 
 							else: 
 								continue
-"""		
+		"""
+	
 
