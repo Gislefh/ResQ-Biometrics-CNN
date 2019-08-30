@@ -67,24 +67,24 @@ class SecModel:
 
 	def random_CNN(self, input_shape):
 		M = Sequential()
-		M.add(Conv2D(32, (3, 3), activation='relu', input_shape = input_shape))
-		M.add(Conv2D(32, (3, 3), activation='relu'))
+		M.add(Conv2D(32, (5, 5), activation='relu', input_shape = input_shape))
+		M.add(Conv2D(32, (5, 5), activation='relu'))
 		M.add(MaxPooling2D(pool_size=(2, 2)))
 		#M.add(Dropout(0.1))
 
-		M.add(Conv2D(64, (3, 3), activation='relu'))
-		M.add(Conv2D(64, (3, 3), activation='relu'))
+		M.add(Conv2D(64, (5, 5), activation='relu'))
+		M.add(Conv2D(64, (5, 5), activation='relu'))
 		M.add(MaxPooling2D(pool_size=(2, 2)))
 		#M.add(Dropout(0.1))
 
-		M.add(Conv2D(128, (3, 3), activation='relu'))
-		M.add(Conv2D(128, (3, 3), activation='relu'))
+		M.add(Conv2D(128, (5, 5), activation='relu'))
+		M.add(Conv2D(128, (5, 5), activation='relu'))
 		M.add(MaxPooling2D(pool_size=(2, 2)))
 		#M.add(Dropout(0.1))
 
-		M.add(Conv2D(255, (3, 3), activation='relu'))
-		M.add(Conv2D(255, (3, 3), activation='relu'))
-		M.add(MaxPooling2D(pool_size=(2, 2)))
+		#M.add(Conv2D(255, (3, 3), activation='relu'))
+		#M.add(Conv2D(255, (3, 3), activation='relu'))
+		#M.add(MaxPooling2D(pool_size=(2, 2)))
 		#M.add(Dropout(0.1))
 
 		#M.add(Conv2D(512, (3, 3), activation='relu'))

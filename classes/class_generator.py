@@ -72,9 +72,14 @@ class Generator:
 
 			for i in range(len(image_list)):
 				choice = np.random.choice(len(image_list[:, 0]))
+				
+
 				image = cv2.imread( image_list[choice, 0])[:, :, 0:self.N_channels]
-				
-				
+				#if image != None:
+				#	image = image[:, :, 0:self.N_channels]
+				#else:
+				#	continue
+
 				# normalize
 				image = image / 255
 
@@ -93,7 +98,6 @@ class Generator:
 
 
 				if i%self.batch_size == self.batch_size -1:
-					#return self.X, self.Y
 					yield(self.X, self.Y)
 
 		
