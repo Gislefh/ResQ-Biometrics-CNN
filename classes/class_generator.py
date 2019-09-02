@@ -28,6 +28,9 @@ class Generator:
 		self.N_classes = N_classes		#number of classes, int
 		self.N_channels = N_channels	#number of channels in the images, 1 is gray, 3 is color
 		self.batch_size = batch_size	#number of samples in a batch
+		self.image = None
+		self.aug_method = []
+		self.aug_args = []
 
 
 	def __im_reshape(self, orig_shape, image):
@@ -38,17 +41,7 @@ class Generator:
 		return ndimage.zoom(image, (factor_x, factor_y, 1), order = 3)
 
 
-
-
-
-
-
-	def generator_from_dir(self, include_folder_list = []):
-
-
-		#if self.N_classes != len(os.listdir(self.path)):
-		#	print('the number of classes does not match the number of folders')
-		#	return None
+	def generator_from_dir(self, include_folder_list = [], N_images_per_class = None):
 
 		self.X = np.zeros(self.X_shape)
 		self.Y = np.zeros(self.Y_shape)
@@ -58,47 +51,61 @@ class Generator:
 
 			image_list = []
 			class_ = 0
+
 			for folder in os.listdir(self.path):
+				cnt_img_per_class = 0
 				if include_folder_list:
 					if folder not in include_folder_list:
 						continue
 					
 				for image_ in os.listdir(self.path +'/' +folder):
+					if N_images_per_class != None:
+						if cnt_img_per_class > N_images_per_class:
+							break
+						
 					image_list.append([self.path + '/' + folder +'/' +image_, class_])
+					cnt_img_per_class += 1
 				
 				class_ += 1
 
 			image_list = np.array(image_list)
 
 			for i in range(len(image_list)):
+
+				##choose random image from list
 				choice = np.random.choice(len(image_list[:, 0]))
-				
-
-				image = cv2.imread( image_list[choice, 0])[:, :, 0:self.N_channels]
-				#if image != None:
-				#	image = image[:, :, 0:self.N_channels]
-				#else:
-				#	continue
-
-				# normalize
-				image = image / 255
-
+				self.image = cv2.imread( image_list[choice, 0])[:, :, 0:self.N_channels]
 				label = int(image_list[choice, 1])
+
+				#norm image to [0,1]
+				self.image = np.clip(self.image / 255, 0, 1)
+			
+	
+				### add augmentation
+				for j, aug_method in enumerate(self.aug_method):
+					aug_method(self.aug_args[j])
+					
 				
-
-
-				if image.shape != self.X[0].shape:
-					self.X[i%self.batch_size] = self.__im_reshape(image.shape, image)
+				## reshape image
+				if self.image.shape != self.X[0].shape:
+					self.X[i%self.batch_size] = self.__im_reshape(self.image.shape, self.image)
 				else:
-					self.X[i%self.batch_size] = image
+					self.X[i%self.batch_size] = self.image
 
-				self.Y[i%self.batch_size] = one_hot(label, len(np.unique(image_list[:,1])))
+				## one hot encode ground truth
+				if include_folder_list:
+					self.Y[i%self.batch_size] = one_hot(label, len(include_folder_list))
+				else:
+					self.Y[i%self.batch_size] = one_hot(label, self.N_classes)
 
-				#image_list = np.delete(image_list, choice, 0)
+				# delete this entry from the list
+				image_list = np.delete(image_list, choice, 0)
 
 
 				if i%self.batch_size == self.batch_size -1:
 					yield(self.X, self.Y)
+
+
 
 		
 
@@ -169,16 +176,73 @@ class Generator:
 				plt.show()				
 
 
+		
+	#### --- Image aug--
+
+	#max_abs_angle_deg: maximum angle of rotation. positive scalar
+	def add_rotate(self, max_abs_angle_deg = 10):
+		self.aug_method.append(self.__add_rotate)
+		self.aug_args.append(max_abs_angle_deg)
+	
+	#min: the lowest value 
+	#max: the highest value
+	#[min, max] shuld be in the range [0.3, 3], (isj)
+	def add_gamma_transform(self, min, max):
+		self.aug_method.append(self.__gamma_transfrom)
+		self.aug_args.append([min, max])
+
+	#max_shift: max normalized shift relative to the image shape. range [0,1]
+	def add_shift(self, max_shift):
+		self.aug_method.append(self.__shift)
+		self.aug_args.append(max_shift)
+	
+	#axis: for images, axis is 0 or 1 or 'random'. defaults to random
+	def add_flip(self, axis = 'random'):
+		self.aug_method.append(self.__flip)
+		self.aug_args.append(axis)
+
+	#-----
+	def __gamma_transfrom(self, args):
+		gamma = np.random.uniform(args[0], args[1])
+		self.image = np.clip(np.power(self.image, gamma), 0, 1)
+
+	def __add_rotate(self, max_angle):	
+		angle = 2 * max_angle * np.random.rand() - max_angle 
+		self.image =  ndimage.rotate(self.image, angle, reshape = False)
+		self.image = np.clip(self.image, 0, 1)
+	
+	def __shift(self, max_shift):
+		shift_x = np.random.uniform(0, self.image.shape[0]) * max_shift
+		shift_y = np.random.uniform(0, self.image.shape[1]) * max_shift
+		self.image = ndimage.shift(self.image, (shift_x, shift_y))
+		self.image = np.clip(self.image, 0, 1)
+
+	def __flip(self, axis):
+		if axis == 'random':
+			flip_axis = np.random.randint(2)
+		self.image = np.flip(self.image, axis = flip_axis)
+		self.image = np.clip(self.image, 0, 1)
+
+
+	
+
+	######## ----
+
+
+	def steps_per_epoch(self, include_folder_list = []):
+		image_list = []
+		class_ = 0
+		for folder in os.listdir(self.path):
+			if include_folder_list:
+				if folder not in include_folder_list:
+					continue
+				
+			for image_ in os.listdir(self.path +'/' +folder):
+				image_list.append([self.path + '/' + folder +'/' +image_, class_])
 			
+			class_ += 1
 
-	def image_aug(self):
-		pass
-
-	#def __flow(self):
-	#	while True:
-			
-	#		yield (X, Y)
-
+		#image_list = np.array(image_list)	for folder in os.listdir:
 
 	# TODO fix this
 	def generator_from_zip(self):
