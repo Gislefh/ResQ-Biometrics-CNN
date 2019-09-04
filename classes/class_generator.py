@@ -83,7 +83,10 @@ class Generator:
 	
 				### add augmentation
 				for j, aug_method in enumerate(self.aug_method):
-					aug_method(self.aug_args[j])
+					if self.aug_args[j] == None:
+						aug_method()
+					else:
+						aug_method(self.aug_args[j])
 					
 				
 				## reshape image
@@ -115,65 +118,101 @@ class Generator:
 
 
 		url = ""
-		prev_url = ""
+		#prev_url = ""
 
 		with open(self.path, "r") as f:
 
 			csv_reader = csv.reader(f, delimiter=",")
 			counter = 0
-			for row in csv_reader:
+			save_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\Data_set_from_web\\'
+			combined_image = np.zeros((self.X_shape[1], self.X_shape[2]*3, self.X_shape[3]))
 
+
+			#find the start point
+			max_number = 0
+			for folder in os.listdir(save_path):
+				for file_ in  os.listdir(save_path +'\\'+ folder):
+					image_name = file_.split('.')[0]
+					if int(image_name) > max_number:
+						max_number = int(image_name)
+
+
+			for row in csv_reader:
+				
+				if counter < max_number:
+					counter  += 3
+					continue
 
 
 				if row[15] !='ONE_CLASS_TRIPLET':
 					continue
 
-				
+				imlist = []
 				for row_inc in range(3):
 					url = row[row_inc * 5]
 
 					
 
 					
-					if url != prev_url:
-						decoded = cv2.imdecode(np.frombuffer(requests.get(url).content, np.uint8), -1)
+					#if url != prev_url:
+					decoded = cv2.imdecode(np.frombuffer(requests.get(url).content, np.uint8), -1)
 
-						if len(np.shape(decoded)) != 3:
-							counter += 1
-							prev_url = url
-							continue
-						bb = []
-						x1 = int(float(row[row_inc * 5 + 1]) * decoded.shape[1])
-						x2 = int(float(row[row_inc * 5 + 2]) * decoded.shape[1])
-
-						y1 = int(float(row[row_inc * 5 + 3]) * decoded.shape[0])
-						y2 = int(float(row[row_inc * 5 + 4]) * decoded.shape[0])
-
-
-						
-						image = cv2.cvtColor(decoded, cv2.COLOR_BGR2RGB)
-						image = image[y1:y2, x1:x2]
-						image = self.__im_reshape(image.shape, image)
-
-						#detector = dlib.get_frontal_face_detector()
-						#gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-						#faces = detector(gray, 1)
-
-						#print(faces)
-						plt.figure(row_inc)
-						plt.imshow(image)
-						#plt.show()
-						
-
-
-
+					if len(np.shape(decoded)) != 3:
 						counter += 1
 						prev_url = url
+						continue
 
-						print(counter)
-						if counter > 100:
-							exit()
-				plt.show()				
+					bb = []
+					x1 = int(float(row[row_inc * 5 + 1]) * decoded.shape[1])
+					x2 = int(float(row[row_inc * 5 + 2]) * decoded.shape[1])
+
+					y1 = int(float(row[row_inc * 5 + 3]) * decoded.shape[0])
+					y2 = int(float(row[row_inc * 5 + 4]) * decoded.shape[0])
+
+					image = decoded
+					image = image[y1:y2, x1:x2]
+					image = self.__im_reshape(image.shape, image)
+					imlist.append(image)
+
+
+					counter += 1
+					print(counter)
+
+				
+				
+				for N, image_ in enumerate(imlist):
+					combined_image[:, N * self.X_shape[2]: (N+1) *self.X_shape[2], :] = image_
+				plt.imshow(combined_image /255)
+				plt.show()
+
+				chosen_class = input('press key to save as: 0-happy, 1-sad, 2-angry, 3-neutral, 4-surprise, 5-other, 6-tired/sleepy, 7 to skip images:   ')
+				
+				try:
+					chosen_class = int(chosen_class)
+				except:
+					print('type in some of the options')
+					continue
+				
+				
+				folder_list = ['happy', 'sad', 'angry', 'neutral', 'surprise', 'other', 'tired_sleepy']
+
+				if chosen_class == 7:
+					print('skiped')
+					continue
+
+				elif len(folder_list) < chosen_class:
+					print('choose from the list')
+
+				
+				else:
+					path = save_path + folder_list[chosen_class] + '\\'
+					for N, images in enumerate(imlist):
+						cv2.imwrite(path + str(counter-2 + N) + '.jpg', images)
+						#cv2.imwrite(path + str(counter -1) + '.jpg', imlist[1])
+						#cv2.imwrite(path + str(counter) + '.jpg', imlist[2])
+					print('Saved as:', folder_list[chosen_class])
+				
+				
 
 
 		
@@ -197,9 +236,9 @@ class Generator:
 		self.aug_args.append(max_shift)
 	
 	#axis: for images, axis is 0 or 1 or 'random'. defaults to random
-	def add_flip(self, axis = 'random'):
+	def add_flip(self):
 		self.aug_method.append(self.__flip)
-		self.aug_args.append(axis)
+		self.aug_args.append(None)
 
 	#-----
 	def __gamma_transfrom(self, args):
@@ -214,14 +253,14 @@ class Generator:
 	def __shift(self, max_shift):
 		shift_x = np.random.uniform(0, self.image.shape[0]) * max_shift
 		shift_y = np.random.uniform(0, self.image.shape[1]) * max_shift
-		self.image = ndimage.shift(self.image, (shift_x, shift_y))
+		self.image = ndimage.shift(self.image, (shift_x, shift_y, 0))
 		self.image = np.clip(self.image, 0, 1)
 
-	def __flip(self, axis):
-		if axis == 'random':
-			flip_axis = np.random.randint(2)
-		self.image = np.flip(self.image, axis = flip_axis)
-		self.image = np.clip(self.image, 0, 1)
+	def __flip(self):
+		if np.random.rand() > 0.5:
+			self.image = np.flip(self.image, axis = 1)
+			self.image = np.clip(self.image, 0, 1)
+
 
 
 	
