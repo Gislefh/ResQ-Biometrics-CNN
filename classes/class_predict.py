@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from imutils.video import VideoStream
 import time
 import pandas as pd
+import sys
 
 class Predict:
 
@@ -15,6 +16,14 @@ class Predict:
         self.output_shape = model.outputs
         self.labels = labels
 
+        if len(labels) != len(self.output_shape):
+            print('not the same number of labes as the model')
+
+
+
+    #  -- Prints the confution matrix -- 
+    # left - what it should have guessed
+    # top - what it guessed
     def conf_matrix(self, generator, N_images, append_labels = True):
         conf_matrix = np.zeros((len(self.labels), len(self.labels)))
         cnt = 0
@@ -25,14 +34,16 @@ class Predict:
                 gt = np.argmax(y[i])
                 conf_matrix[pred, gt] = conf_matrix[pred, gt] +1
                 cnt += 1
-                print('Pred: ', pred, 'gt: ', gt)
+            print(cnt,'/', N_images)
+                
+            if cnt > N_images:
                 break
-            if cnt > 1:
-                break
+
         df = pd.DataFrame(conf_matrix, index = self.labels, columns = self.labels)
         print(df)
-        #print(conf_matrix)
-        exit()
+        
+
+        
 
 
     def pred_from_cam(self):
@@ -62,7 +73,7 @@ class Predict:
                 frame_to_model = frame
             if c2g:
                 frame_to_model = cv2.cvtColor(frame_to_model, cv2.COLOR_BGR2GRAY)
-            
+
             frame_to_model = np.expand_dims(frame_to_model, 0)
             frame_to_model = np.expand_dims(frame_to_model, -1)
 
@@ -73,7 +84,10 @@ class Predict:
 
             prediction_str = self.labels[np.argmax(prediction)]
 
-            cv2.putText(frame, prediction_str, (100,100), cv2.FONT_HERSHEY_COMPLEX, 2, (255, 0, 0))
+            conf = prediction[0, np.argmax(prediction)]
+
+            cv2.putText(frame, prediction_str, (100,100), cv2.FONT_HERSHEY_COMPLEX, 1.5, (255, 0, 0))
+            cv2.putText(frame, 'conf: ' +str(conf), (100,200), cv2.FONT_HERSHEY_COMPLEX, 1.5, (255, 0, 0))
             cv2.imshow("Frame", frame)
 
             cv2.namedWindow('f2m',cv2.WINDOW_NORMAL)

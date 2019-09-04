@@ -17,7 +17,7 @@ test_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\face-expre
 
 N_channels = 1
 batch_size = 16
-image_shape = (60, 60)
+image_shape = (70, 70)
 N_classes = 6
 X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
@@ -31,8 +31,8 @@ gen.add_shift(0.1)
 batch_gen = gen.generator_from_dir(include_folder_list = ['angry', 'fear', 'happy', 'neutral', 'sad', 'surprise'], N_images_per_class = 3000)
 
 test_gen = Generator(test_path, X_shape, Y_shape, N_classes, N_channels, batch_size)
-test_gen.add_rotate(max_abs_angle_deg=20)
-test_gen.add_gamma_transform(0.5,1.5)
+#test_gen.add_rotate(max_abs_angle_deg=20)
+#test_gen.add_gamma_transform(0.5,1.5)
 test_gen = test_gen.generator_from_dir(include_folder_list = ['angry', 'fear', 'happy', 'neutral', 'sad', 'surprise'], N_images_per_class = 700)
 
 
@@ -43,16 +43,16 @@ test_gen = test_gen.generator_from_dir(include_folder_list = ['angry', 'fear', '
 
 
 ## chaeckpoints
-early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=2, verbose=0, mode='auto', baseline=None, restore_best_weights=True)
-callback = []
+early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=5, verbose=0, mode='auto', baseline=None, restore_best_weights=True)
+callback = []q
 callback.append(early_stop)
 
 
 ## load old model
-#model = load_model("Models\\test_model.h5")
+model = load_model("Models\\test_model.h5")
 
 
-"""
+#"""
 model.compile(loss='categorical_crossentropy',
           optimizer='adam',
          metrics=['acc'])
@@ -63,12 +63,12 @@ model.fit_generator(batch_gen,
                     validation_data = test_gen,
                     steps_per_epoch = steps_per_epoch, 
                     validation_steps = 700*6/batch_size,
-                    epochs = 15,
+                    epochs = 35,
                     callbacks = callback)
 
 model.save("Models\\test_model.h5")
 exit()
-"""
+#"""
 
 ### test model
 

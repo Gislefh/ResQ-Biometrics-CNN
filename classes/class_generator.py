@@ -108,10 +108,8 @@ class Generator:
 				if i%self.batch_size == self.batch_size -1:
 					yield(self.X, self.Y)
 
-
-
 		
-
+	### gets facial images from the web, displayes them and saves them in save_path in the chosen folder of the class. 
 	def generator_from_web(self):
 
 		#X_trip = np.zeros((self.X_shape[1] * 3, self.X_shape[2], self.X_shape[3]))
@@ -211,11 +209,46 @@ class Generator:
 						#cv2.imwrite(path + str(counter -1) + '.jpg', imlist[1])
 						#cv2.imwrite(path + str(counter) + '.jpg', imlist[2])
 					print('Saved as:', folder_list[chosen_class])
-				
-				
 
 
-		
+	## yields a face from the google dataset	
+	def face_from_web_gen(self):
+		prev_urls = []
+
+		with open(self.path, "r") as f:
+
+			csv_reader = csv.reader(f, delimiter=",")
+
+			for row in csv_reader:
+
+				for row_inc in range(3):
+
+					url = row[row_inc * 5]
+					if url in prev_urls:
+						continue
+
+					prev_urls.append(url)
+
+					image = cv2.imdecode(np.frombuffer(requests.get(url).content, np.uint8), -1)
+
+					if len(np.shape(image)) != 3:
+						#counter += 1
+						continue
+
+					bb = []
+					x1 = int(float(row[row_inc * 5 + 1]) * image.shape[1])
+					x2 = int(float(row[row_inc * 5 + 2]) * image.shape[1])
+
+					y1 = int(float(row[row_inc * 5 + 3]) * image.shape[0])
+					y2 = int(float(row[row_inc * 5 + 4]) * image.shape[0])
+
+					image = image[y1:y2, x1:x2]
+					image = self.__im_reshape(orig_shape = image.shape, image = image)
+
+					yield image 
+
+
+	''
 	#### --- Image aug--
 
 	#max_abs_angle_deg: maximum angle of rotation. positive scalar
