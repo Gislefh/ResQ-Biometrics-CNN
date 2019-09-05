@@ -44,7 +44,7 @@ test_gen = test_gen.generator_from_dir(include_folder_list = ['angry', 'fear', '
 
 ## chaeckpoints
 early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=5, verbose=0, mode='auto', baseline=None, restore_best_weights=True)
-callback = []q
+callback = []
 callback.append(early_stop)
 
 
