@@ -22,16 +22,19 @@ X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
 
 ## create ganerator
+N_rows_in_csv = int(np.load(save_path + 'metadata.npy'))
+
 gen = Generator(path_to_google_data_cvs, X_shape, Y_shape, N_classes, N_channels, batch_size)
-W_gen = gen.face_from_web_gen()
+W_gen = gen.face_from_web_gen(start_row = N_rows_in_csv)
 
 model = load_model("Models\\test_model.h5")
 label_list = ['angry', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 label_number = np.zeros((len(label_list)))
 cnt = 0
-
+row_counter = N_rows_in_csv
 for image in W_gen:
-    print(cnt)
+    print('images saved this session: ', cnt, 'total rows: ', row_counter)
+    row_counter += 1
     ### rescale
     zoom_fac_x  = model_shape[0] / image_shape[0]
     zoom_fac_y  = model_shape[1] / image_shape[1]
@@ -48,13 +51,14 @@ for image in W_gen:
     conf = pred[0, np.argmax(pred)]
 
     if conf > 0.5:
-        ## saving 100 of each class
-        if label_number[np.argmax(pred)] < 200:
-            label_number[np.argmax(pred)] += 1
-            cnt += 1
-        else:
-            print(pred_label, 'not saving')
-            continue
+        ## saving 200 of each class
+        cnt += 1
+        #if label_number[np.argmax(pred)] < 200:
+        #    label_number[np.argmax(pred)] += 1
+            
+        #else:
+        #    print(pred_label, 'not saving')
+        #    continue
 
 
 
@@ -62,8 +66,14 @@ for image in W_gen:
         if not pred_label in os.listdir(save_path):
             os.mkdir(save_path + pred_label)
             cv2.imwrite(save_path + pred_label + '\\' + str(cnt)+'.jpg', image)
+
+            
+            
+
         else:
             cv2.imwrite(save_path + pred_label + '\\' + str(cnt)+'.jpg', image)
+            ##update metadata
+            np.save(save_path + 'metadata.npy', str(row_counter))
 
     tmp = 0
     for item in label_number:
@@ -72,6 +82,8 @@ for image in W_gen:
     
     if tmp >= len(label_number):
         break
+
+
 
     
         

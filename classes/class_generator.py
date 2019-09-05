@@ -212,14 +212,18 @@ class Generator:
 
 
 	## yields a face from the google dataset	
-	def face_from_web_gen(self):
+	def face_from_web_gen(self, start_row = 0):
 		prev_urls = []
 
 		with open(self.path, "r") as f:
 
 			csv_reader = csv.reader(f, delimiter=",")
 
-			for row in csv_reader:
+			for row_nr, row in enumerate(csv_reader):
+
+				# skip to start_row
+				if row_nr < start_row:
+					continue
 
 				for row_inc in range(3):
 
