@@ -16,23 +16,28 @@ path_to_google_data_cvs =  'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data s
 N_channels = 1
 batch_size = 16
 model_shape_shape = (70, 70)
-N_classes = 6
-X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
+N_classes = 7
+X_shape = (batch_size, model_shape_shape[0], model_shape_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
 
 ## create ganerator
-gen = Generator(path_to_google_data_cvs, X_shape, Y_shape, N_classes, N_channels, batch_size)
+#gen = Generator(path_to_google_data_cvs, X_shape, Y_shape, N_classes, N_channels, batch_size)
 #gen = gen.generator_from_dir(include_folder_list = ['angry', 'fear', 'happy', 'neutral', 'sad', 'surprise'], N_images_per_class = 700)
-W_gen = gen.face_from_web_gen()
+#W_gen = gen.face_from_web_gen()
+
+gen_test = Generator(test_path, X_shape, Y_shape, N_classes, N_channels, batch_size)
+N_data = gen_test.get_length_data()
+test_gen = gen_test.flow_from_dir(set = 'test')
 
 
 
 
-model = load_model("Models\\test_model.h5")
-P = Predict(model, labels = ['angry', 'fear', 'happy', 'neutral', 'sad', 'surprise'])
+model = load_model("Models\\model2.h5")
+P = Predict(model, labels = ['angry','disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise'])
 
 #P.pred_from_cam()
-
+P.conf_matrix(test_gen, N_data)
+exit()
 label_list = ['angry', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 
 

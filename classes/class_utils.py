@@ -22,14 +22,15 @@ def one_hot(value, N_classes):
 
 
 def get_vgg16_from_keras(input_shape, N_classes):
-		if input_shape == None:
-			inc_top = True
-			inp_shape = None
+	if input_shape == None:
+		inc_top = True
+		inp_shape = None
 
-		else:
-			inc_top = True
-			inp_shape = input_shape
+	else:
+		inc_top = True
+		inp_shape = input_shape
 
-		model = keras.applications.vgg16.VGG16(include_top=inc_top, weights= None, input_tensor=None, input_shape=inp_shape, pooling=None, classes=N_classes)
-		return model
+	model = keras.applications.vgg16.VGG16(include_top=inc_top, weights= None, input_tensor=None, input_shape=inp_shape, pooling=None, classes=N_classes)
+	return model
+
 
