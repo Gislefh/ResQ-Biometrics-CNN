@@ -3,6 +3,7 @@ import numpy as np
 from scipy import ndimage
 import matplotlib.pyplot as plt
 from imutils.video import VideoStream
+import dlib
 import time
 import pandas as pd
 import sys
@@ -16,8 +17,10 @@ class Predict:
         self.output_shape = model.outputs
         self.labels = labels
 
-        if len(labels) != len(self.output_shape):
-            print('not the same number of labes as the model')
+
+        #TODO fix this
+        #if len(labels) != len(self.output_shape):
+        #    print('not the same number of labes as the model')
 
 
 
@@ -51,28 +54,29 @@ class Predict:
         time.sleep(2.0)
         frame = vs.read()
         
+        fd = dlib.get_frontal_face_detector()
 
 
-        if frame.shape != self.input_shape[1:4]:
-            zoom = True
-            zoom_factor = [int(self.input_shape[1])/frame.shape[0], int(self.input_shape[2])/frame.shape[1]] 
-        else:
-            zoom = False
-        
-        if frame.shape[-1] != self.input_shape[-1]:
-            c2g = True
-        else:
-            c2g = False
-        
         while True:
             frame = vs.read()
             
-            if zoom:
-                frame_to_model = ndimage.zoom(frame, [zoom_factor[0], zoom_factor[1], 1], order =3)
+            gray_image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            
+            try:
+                face = fd(gray_image, 1)[0]
+                frame_to_model = gray_image[face.top():face.bottom(), face.left():face.right()]
+                cnt = 0
+            except:
+                cnt +=1
+                print('no face detected for ', cnt, 'frames')
+                continue
+
+            if frame.shape != self.input_shape[1:4]:
+                zoom_factor = [int(self.input_shape[1])/frame_to_model.shape[0], int(self.input_shape[2])/frame_to_model.shape[1]] 
+                frame_to_model = ndimage.zoom(frame_to_model, [zoom_factor[0], zoom_factor[1]], order =3)
+
             else:
                 frame_to_model = frame
-            if c2g:
-                frame_to_model = cv2.cvtColor(frame_to_model, cv2.COLOR_BGR2GRAY)
 
             frame_to_model = np.expand_dims(frame_to_model, 0)
             frame_to_model = np.expand_dims(frame_to_model, -1)
@@ -86,13 +90,15 @@ class Predict:
 
             conf = prediction[0, np.argmax(prediction)]
 
-            cv2.putText(frame, prediction_str, (100,100), cv2.FONT_HERSHEY_COMPLEX, 1.5, (255, 0, 0))
+            cv2.putText(frame, prediction_str, (50,100), cv2.FONT_HERSHEY_COMPLEX, 1.5, (255, 0, 0))
             cv2.putText(frame, 'conf: ' +str(conf), (100,200), cv2.FONT_HERSHEY_COMPLEX, 1.5, (255, 0, 0))
-            cv2.imshow("Frame", frame)
+            #cv2.namedWindow('Cam output',cv2.WINDOW_NORMAL)
+            #cv2.resizeWindow('Cam output', 400,400)
+            cv2.imshow("Cam output", frame)
 
-            cv2.namedWindow('f2m',cv2.WINDOW_NORMAL)
-            cv2.resizeWindow('f2m', 200,200)
-            cv2.imshow('f2m', np.squeeze(frame_to_model, (0, -1)))
+            cv2.namedWindow('Model input',cv2.WINDOW_NORMAL)
+            cv2.resizeWindow('Model input', 200,200)
+            cv2.imshow('Model input', np.squeeze(frame_to_model, (0, -1)))
            
 
             key = cv2.waitKey(1) & 0xFF
