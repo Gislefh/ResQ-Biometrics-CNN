@@ -17,9 +17,9 @@ import os
 train_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\ExpW'
 
 N_channels = 3
-N_images_per_class = 3000
-batch_size = 8
-image_shape = (50, 50)
+N_images_per_class = 1000
+batch_size = 16
+image_shape = (100, 100)
 N_classes = 7
 X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
@@ -67,7 +67,7 @@ history = model.fit_generator(train_gen,
                     validation_data = val_gen,
                     steps_per_epoch = steps_per_epoch, 
                     validation_steps = val_setps_per_epoch,
-                    epochs = 2,
+                    epochs = 5,
                     callbacks = callback,
                     use_multiprocessing = False)
 """ TODO FIX

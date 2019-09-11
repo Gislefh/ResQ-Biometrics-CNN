@@ -79,10 +79,10 @@ class SecModel:
 		M.add(MaxPooling2D(pool_size=(2, 2)))
 		M.add(Dropout(0.05))
 
-		M.add(Conv2D(128, (3, 3), activation='relu'))
 		#M.add(Conv2D(128, (3, 3), activation='relu'))
-		M.add(MaxPooling2D(pool_size=(2, 2)))
-		M.add(Dropout(0.05))
+		#M.add(Conv2D(128, (3, 3), activation='relu'))
+		#M.add(MaxPooling2D(pool_size=(2, 2)))
+		#M.add(Dropout(0.05))
 
 		#M.add(Conv2D(255, (3, 3), activation='relu'))
 		#M.add(Conv2D(255, (3, 3), activation='relu'))

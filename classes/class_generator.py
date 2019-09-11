@@ -143,6 +143,7 @@ class Generator:
 				##choose random image from list
 				choice = np.random.choice(len(image_list[:, 0]))
 				self.image = cv2.imread( image_list[choice, 0])[:, :, 0:self.N_channels]
+				self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
 				label = int(image_list[choice, 1])
 
 				#normalize image to [0,1]
