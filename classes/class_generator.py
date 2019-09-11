@@ -89,7 +89,7 @@ class Generator:
 			for image_ in os.listdir(self.path +'/' +folder):
 				if N_images_per_class != None:
 					if cnt_img_per_class > N_images_per_class:
-						break
+						break ##TODO fix
 					
 				image_list.append([self.path + '/' + folder +'/' +image_, class_])
 				cnt_img_per_class += 1
@@ -100,10 +100,9 @@ class Generator:
 		## TODO fix so that there are equal images for each class
 		np.random.shuffle(image_list)
 		image_list = np.array(image_list)
+
 		self.train_set = image_list[0:int(image_list.shape[0] * (1-self.train_val_split)),  :]
 		self.val_set = image_list[int(image_list.shape[0] * (1-self.train_val_split)):-1,  :]
-
-
 
 	''' Creates a generator for either training set or validation set
 	- IN:

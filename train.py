@@ -38,14 +38,14 @@ gen_test = Generator(test_path, X_shape, Y_shape, N_classes, N_channels, batch_s
 test_gen = gen_test.flow_from_dir(set = 'test')
 
 
-### get model
-#m = SecModel(N_classes)
-#model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], N_channels))
-#model.summary()
+### -- get model
+m = SecModel(N_classes)
+model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], N_channels))
+model.summary()
 
 
-# load model
-model = load_model('Models\\model2.h5')
+### --- load model
+#model = load_model('Models\\model2.h5')
 
 ## callbacks
 early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
@@ -69,12 +69,12 @@ history = model.fit_generator(train_gen,
                     validation_data = val_gen,
                     steps_per_epoch = steps_per_epoch, 
                     validation_steps = val_setps_per_epoch,
-                    epochs = 15,
+                    epochs = 45,
                     callbacks = callback,
                     use_multiprocessing = False)
 
-print(history.history)
-model_name = 'model2'  # <- change each training
+#print(history.history)
+model_name = 'model3'  # <- change each training
 save_model_path = 'Models\\'
 
 meta_data = {'model_name' : model_name,
