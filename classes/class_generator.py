@@ -20,7 +20,7 @@ import requests
 class Generator:
 
 
-	def __init__(self, path, X_shape, Y_shape, N_classes, N_channels, batch_size, train_val_split = 0.3, class_list = []):
+	def __init__(self, path, X_shape, Y_shape, N_classes, N_channels, batch_size, train_val_split = 0.3, class_list = [], N_images_per_class = None):
 
 		self.path = path 				#path to folder, str
 		self.X_shape = X_shape			#shape of output, (samples, x, y, channel) or (samples, x, y, z, channels)
@@ -32,7 +32,7 @@ class Generator:
 		self.aug_method = []
 		self.aug_args = []
 		self.train_val_split = train_val_split 	#defaults to 0.3
-
+		self.N_images_per_class = N_images_per_class
 		if class_list:
 			self.class_list = class_list
 		else:
@@ -55,7 +55,7 @@ class Generator:
 			augs.append(aug.__name__)
 		return augs
 	
-
+	"""
 	## works for all the data in the folders
 	def get_length_data(self):
 		N_data = 0
@@ -68,8 +68,10 @@ class Generator:
 				for file_ in os.listdir(self.path + '\\' +folder):
 					N_data  = N_data + 1					
 		return N_data
-
-
+	"""
+	def get_length_data(self):
+		self.__from_dir(self.N_images_per_class)
+		return len(self.train_set) + len(self.val_set)
 	''' saves a list of derectories to images with the image class
 	IN:
 	N_images_per_class: how many images to get per class
@@ -111,14 +113,14 @@ class Generator:
 	train_val_split: how much of the data thats used as validaion
 	'''
 
-	def flow_from_dir(self, set = 'train', N_images_per_class = None, augment_validation = True):
+	def flow_from_dir(self, set = 'train', augment_validation = True):
 		
 
 		if set == 'test':
 			self.train_val_split = 0
 
 		# create sets
-		self.__from_dir(N_images_per_class)
+		self.__from_dir(self.N_images_per_class)
 
 		self.X = np.zeros(self.X_shape)
 		self.Y = np.zeros(self.Y_shape)
@@ -355,13 +357,13 @@ class Generator:
 
 	def __rotate(self, max_angle):	
 		angle = 2 * max_angle * np.random.rand() - max_angle 
-		self.image =  ndimage.rotate(self.image, angle, reshape = False)
+		self.image =  ndimage.rotate(self.image, angle, reshape = False, order = 1)
 		self.image = np.clip(self.image, 0, 1)
 	
 	def __shift(self, max_shift):
 		shift_x = np.random.uniform(-self.image.shape[0], self.image.shape[0]) * max_shift
 		shift_y = np.random.uniform(-self.image.shape[1], self.image.shape[1]) * max_shift
-		self.image = ndimage.shift(self.image, (shift_x, shift_y, 0))
+		self.image = ndimage.shift(self.image, (shift_x, shift_y, 0), order = 1)
 		self.image = np.clip(self.image, 0, 1)
 
 	def __flip(self):
@@ -377,7 +379,7 @@ class Generator:
 			zoom_range_x = 1
 			zoom_range_y = args[0] + (np.random.rand() * (args[1]- args[0]))
 
-		self.image = ndimage.zoom(self.image, (zoom_range_x, zoom_range_y, 1), order = 3)
+		self.image = ndimage.zoom(self.image, (zoom_range_x, zoom_range_y, 1), order = 1)
 
 
 	
@@ -389,7 +391,7 @@ class Generator:
 		factor_x = self.X_shape[1] / orig_shape[0]
 		factor_y = self.X_shape[2] / orig_shape[1]
 
-		return ndimage.zoom(image, (factor_x, factor_y, 1), order = 3)
+		return ndimage.zoom(image, (factor_x, factor_y, 1), order = 1)
 
 
 	# TODO fix this

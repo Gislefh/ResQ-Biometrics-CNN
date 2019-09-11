@@ -32,7 +32,7 @@ test_gen = gen_test.flow_from_dir(set = 'test')
 
 
 
-model = load_model("Models\\model2.h5")
+model = load_model("Models\\model3.h5")
 P = Predict(model, labels = ['angry','disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise'])
 
 #P.pred_from_cam()
