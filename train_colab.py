@@ -30,10 +30,10 @@ Y_shape = (batch_size, N_classes)
 val_size = 0.3
 
 gen_train = Generator(train_path, X_shape, Y_shape, N_classes, N_channels, batch_size, train_val_split = val_size, N_images_per_class=N_images_per_class)
-gen_train.add_rotate(max_abs_angle_deg=20)
-gen_train.add_gamma_transform(0.5,1.5)
+gen_train.add_rotate(max_abs_angle_deg=40)
+gen_train.add_gamma_transform(0.4,1.8)
 gen_train.add_flip()
-gen_train.add_shift(0.1)
+gen_train.add_shift(0.15)
 #gen_train.add_zoom(zoom_range= [0.2,2])
 
 train_gen = gen_train.flow_from_dir(set = 'train')
