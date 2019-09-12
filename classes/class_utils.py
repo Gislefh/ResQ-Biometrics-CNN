@@ -1,6 +1,7 @@
 import numpy as np
 import keras
-
+from keras.models import Sequential, load_model, Model
+from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D
 
 """
 --- From numerical value to one hot encoded ---
