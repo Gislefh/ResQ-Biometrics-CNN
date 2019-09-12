@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 from class_model import SecModel
 from class_generator import Generator
-from class_utils import get_vgg16_from_keras
+from class_utils import get_vgg16_from_keras, get_vgg_w_imnet
 
 import keras
 from keras.models import load_model
@@ -42,9 +42,13 @@ val_gen = gen_train.flow_from_dir(set = 'val', augment_validation = True)
 
 
 ### -- get model
-m = SecModel(N_classes)
-model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], N_channels))
-model.summary()
+#m = SecModel(N_classes)
+#model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], N_channels))
+#model.summary()
+
+### -- vgg16
+model = get_vgg_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes)
+
 
 
 ### --- load model

@@ -33,4 +33,14 @@ def get_vgg16_from_keras(input_shape, N_classes):
 	model = keras.applications.vgg16.VGG16(include_top=inc_top, weights= None, input_tensor=None, input_shape=inp_shape, pooling=None, classes=N_classes)
 	return model
 
+def get_vgg_w_imnet(input_shape, N_classes):
+	init_model = keras.applications.vgg16.VGG16(include_top=False, weights='imagenet', input_shape=input_shape, pooling='max', classes=None)
 
+	x = Dense(255, activation='relu')(init_model.output)
+	x = Dropout(0.1)(x)
+	x = Dense(255, activation='relu')(x)
+	x = Dropout(0.1)(x)
+	preds = Dense(N_classes, activation='softmax')(x)
+	model = Model(init_model.input, preds)
+	
+	return model
