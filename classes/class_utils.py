@@ -44,4 +44,6 @@ def get_vgg_w_imnet(input_shape, N_classes):
 	preds = Dense(N_classes, activation='softmax')(x)
 	model = Model(init_model.input, preds)
 	
+	for layer in model.layers[-6:-1]:
+		layer.trainable = False
 	return model
