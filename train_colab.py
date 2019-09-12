@@ -1,3 +1,7 @@
+"""
+Script for colab 
+"""
+
 import sys
 sys.path.insert(0, "classes")
 
@@ -17,9 +21,9 @@ import os
 train_path = '/data/ExpW'
 
 N_channels = 3
-N_images_per_class = 4000
+N_images_per_class = 1000
 batch_size = 16
-image_shape = (100, 100)
+image_shape = (48, 48)
 N_classes = 7
 X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
