@@ -23,7 +23,7 @@ save_model_path = '/content/drive/My Drive/ResQBiometrics/Models/'
 new_model_name = 'colab_test.h5'
 
 N_channels = 3
-N_images_per_class = 40
+N_images_per_class = 4000
 batch_size = 16
 image_shape = (100, 100)
 N_classes = 7
@@ -88,7 +88,7 @@ history = model.fit_generator(train_gen,
                     validation_data = val_gen,
                     steps_per_epoch = steps_per_epoch, 
                     validation_steps = val_setps_per_epoch,
-                    epochs = 2,
+                    epochs = 100,
                     callbacks = callback,
                     use_multiprocessing = False)
 
