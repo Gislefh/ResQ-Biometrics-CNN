@@ -44,15 +44,14 @@ val_gen = gen_train.flow_from_dir(set = 'val', augment_validation = True)
 ### -- get model
 #m = SecModel(N_classes)
 #model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], N_channels))
-#model.summary()
 
 ### -- vgg16
 model = get_vgg_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes)
 
-
-
 ### --- load model
 #model = load_model('Models\\model2.h5')
+
+model.summary()
 
 ## callbacks
 early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
