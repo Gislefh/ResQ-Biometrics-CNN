@@ -17,11 +17,12 @@ from keras.models import load_model
 import h5py
 import os
 
-
+## colab spesific
 train_path = '/data/ExpW'
+save_model_path = '/content/drive/My Drive/ResQBiometrics/Models/'
 
 N_channels = 3
-N_images_per_class = 1000
+N_images_per_class = 10
 batch_size = 16
 image_shape = (48, 48)
 N_classes = 7
@@ -71,7 +72,7 @@ history = model.fit_generator(train_gen,
                     validation_data = val_gen,
                     steps_per_epoch = steps_per_epoch, 
                     validation_steps = val_setps_per_epoch,
-                    epochs = 20,
+                    epochs = 2,
                     callbacks = callback,
                     use_multiprocessing = False)
 """ TODO FIX
@@ -93,7 +94,6 @@ prev_max_plus_one = np.amax(model_number_list) +1
 model_name = 'model_'+ str(prev_max_plus_one)
 """
 model_name = 'model_4'
-save_model_path = 'Models\\'
 
 meta_data = {'model_name' : model_name,
                 'batch_size' : batch_size,
