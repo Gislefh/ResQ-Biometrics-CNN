@@ -22,9 +22,9 @@ train_path = '/data/ExpW'
 save_model_path = '/content/drive/My Drive/ResQBiometrics/Models/'
 
 N_channels = 3
-N_images_per_class = 10
+N_images_per_class = 4000
 batch_size = 16
-image_shape = (48, 48)
+image_shape = (100, 100)
 N_classes = 7
 X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
