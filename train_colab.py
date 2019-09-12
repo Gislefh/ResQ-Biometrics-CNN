@@ -14,7 +14,7 @@ import h5py
 import os
 
 
-train_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\ExpW'
+train_path = '/data/ExpW'
 
 N_channels = 3
 N_images_per_class = 4000
