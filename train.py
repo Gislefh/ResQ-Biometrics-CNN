@@ -6,16 +6,20 @@ import matplotlib.pyplot as plt
 
 from class_model import SecModel
 from class_generator import Generator
-from class_utils import get_vgg16_from_keras
+from class_utils import get_vgg16_from_keras, get_vgg_w_imnet
 
 import keras
 from keras.models import load_model
 import h5py
 import os
 
-
+## paths
 train_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\ExpW'
+new_model_name = 'model_5.h5'
+save_model_path = 'Models\\'
 
+
+## consts
 N_channels = 3
 N_images_per_class = 4000
 batch_size = 16
@@ -25,6 +29,8 @@ X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
 val_size = 0.3
 
+
+### generator
 gen_train = Generator(train_path, X_shape, Y_shape, N_classes, N_channels, batch_size, train_val_split = val_size, N_images_per_class=N_images_per_class)
 gen_train.add_rotate(max_abs_angle_deg=20)
 gen_train.add_gamma_transform(0.5,1.5)
@@ -37,9 +43,12 @@ val_gen = gen_train.flow_from_dir(set = 'val', augment_validation = True)
 
 
 ### -- get model
-m = SecModel(N_classes)
-model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], N_channels))
-model.summary()
+#m = SecModel(N_classes)
+#model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], N_channels))
+#model.summary()
+
+### -- vgg16 + empty 
+model = get_vgg_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes)
 
 
 ### --- load model
@@ -53,8 +62,15 @@ early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
                                                 mode='auto', 
                                                 baseline=None, 
                                                 restore_best_weights=True)
-callback = []
-callback.append(early_stop)
+
+save_best = keras.callbacks.ModelCheckpoint(save_model_path + new_model_name, 
+                                monitor='val_loss',
+                                verbose=1, 
+                                save_best_only=True, 
+                                save_weights_only=False, 
+                                mode='min', 
+                                period=1)
+callback = [save_best, early_stop]
 
 model.compile(loss='categorical_crossentropy',
           optimizer='adam',
@@ -88,8 +104,7 @@ prev_max_plus_one = np.amax(model_number_list) +1
 
 model_name = 'model_'+ str(prev_max_plus_one)
 """
-model_name = 'model_4'
-save_model_path = 'Models\\'
+
 
 meta_data = {'model_name' : model_name,
                 'batch_size' : batch_size,

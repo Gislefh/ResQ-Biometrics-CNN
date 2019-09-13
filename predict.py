@@ -13,9 +13,9 @@ import matplotlib.pyplot as plt
 test_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\face-expression-recognition-dataset\\images\\validation'
 from_web_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\Data_set_from_web'
 path_to_google_data_cvs =  'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\FEC_dataset\\faceexp-comparison-data-train-public.csv'
-N_channels = 1
+N_channels = 3
 batch_size = 16
-model_shape_shape = (70, 70)
+model_shape_shape = (100, 100)
 N_classes = 7
 X_shape = (batch_size, model_shape_shape[0], model_shape_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
@@ -32,11 +32,11 @@ test_gen = gen_test.flow_from_dir(set = 'test')
 
 
 
-model = load_model("Models\\model3.h5")
+model = load_model("Models\\From_Colab\\model_4.h5")
 P = Predict(model, labels = ['angry','disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise'])
 
-#P.pred_from_cam()
-P.conf_matrix(test_gen, N_data)
+P.pred_from_cam()
+#P.conf_matrix(test_gen, N_data)
 exit()
 label_list = ['angry', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 
