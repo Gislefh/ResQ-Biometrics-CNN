@@ -88,7 +88,7 @@ history = model.fit_generator(train_gen,
                     validation_data = val_gen,
                     steps_per_epoch = steps_per_epoch, 
                     validation_steps = val_setps_per_epoch,
-                    epochs = 100,
+                    epochs = 40,
                     callbacks = callback,
                     use_multiprocessing = False)
 
