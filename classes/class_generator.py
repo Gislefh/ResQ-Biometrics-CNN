@@ -90,11 +90,16 @@ class Generator:
 
 		## shuffle and save into test and train
 		## TODO fix so that there are equal images for each class
-		np.random.shuffle(image_list)
-		image_list = np.array(image_list)
 
-		self.train_set = image_list[0:int(image_list.shape[0] * (1-self.train_val_split)),  :]
-		self.val_set = image_list[int(image_list.shape[0] * (1-self.train_val_split)):-1,  :]
+		for item in image_list:
+			print(item)
+			exit()
+
+		#np.random.shuffle(image_list)
+		#image_list = np.array(image_list)
+
+		#self.train_set = image_list[0:int(image_list.shape[0] * (1-self.train_val_split)),  :]
+		#self.val_set = image_list[int(image_list.shape[0] * (1-self.train_val_split)):-1,  :]
 
 	''' Creates a generator for either training set or validation set
 	- IN:
