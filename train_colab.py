@@ -24,7 +24,7 @@ new_model_name = 'model_1.h5'
 
 N_channels = 1
 N_images_per_class = 4000
-batch_size = 64
+batch_size = 8
 image_shape = (48, 48)
 N_classes = 7
 X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
