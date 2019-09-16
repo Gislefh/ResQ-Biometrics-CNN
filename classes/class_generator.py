@@ -55,23 +55,13 @@ class Generator:
 			augs.append(aug.__name__)
 		return augs
 	
-	"""
-	## works for all the data in the folders
-	def get_length_data(self):
-		N_data = 0
-		for folder in os.listdir(self.path):
-			if self.class_list:
-				if folder in self.class_list:
-					for file_ in os.listdir(self.path + '\\' +folder):
-						N_data  = N_data + 1
-			else:
-				for file_ in os.listdir(self.path + '\\' +folder):
-					N_data  = N_data + 1					
-		return N_data
-	"""
+	#returns the number of images in the chosen classes. 
 	def get_length_data(self):
 		self.__from_dir(self.N_images_per_class)
 		return len(self.train_set) + len(self.val_set)
+
+
+
 	''' saves a list of derectories to images with the image class
 	IN:
 	N_images_per_class: how many images to get per class

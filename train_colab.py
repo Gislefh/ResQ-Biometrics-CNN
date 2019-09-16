@@ -23,7 +23,7 @@ save_model_path = '/content/drive/My Drive/ResQBiometrics/Models/'
 new_model_name = 'colab_test.h5'
 
 N_channels = 3
-N_images_per_class = 4000
+N_images_per_class = 40
 batch_size = 16
 image_shape = (224, 224)
 N_classes = 7
@@ -111,10 +111,10 @@ for item in folder_list:
 prev_max_plus_one = np.amax(model_number_list) +1 
 
 model_name = 'model_'+ str(prev_max_plus_one)
+"""
 
-model_name = 'model_4'
 
-meta_data = {'model_name' : model_name,
+meta_data = {'model_name' : new_model_name,
                 'batch_size' : batch_size,
                 'train_path' : train_path,
                 'model_summary' : model.summary(),
@@ -125,5 +125,4 @@ meta_data = {'model_name' : model_name,
 }
 np.save(save_model_path +'meta_data_'+ model_name, meta_data)
 
-model.save(save_model_path + model_name + '.h5')
-"""
+#model.save(save_model_path + model_name + '.h5')
