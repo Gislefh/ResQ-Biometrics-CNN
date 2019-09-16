@@ -55,7 +55,7 @@ class Generator:
 			augs.append(aug.__name__)
 		return augs
 	
-	#returns the number of images in the chosen classes. 
+	#returns the number of images in the chosen classes. Called after the 'flow' function
 	def get_length_data(self):
 		self.__from_dir(self.N_images_per_class)
 		return len(self.train_set) + len(self.val_set)
@@ -72,34 +72,35 @@ class Generator:
 		image_list = []
 		class_ = 0
 
+		self.val_set = []
+		self.train_set = []
+
 		for folder in os.listdir(self.path):
 			cnt_img_per_class = 0
 			if self.class_list:
 				if folder not in self.class_list:
 					continue
-				
+			
+			## saving N_val first images as validation
+			if N_images_per_class != None:
+				N_val = int(N_images_per_class * self.train_val_split)
+			else:
+				N_val = int(len(os.listdir(self.path +'/' +folder)) * self.train_val_split)
+
 			for image_ in os.listdir(self.path +'/' +folder):
 				if N_images_per_class != None:
 					if cnt_img_per_class > N_images_per_class:
 						break ##TODO fix
-					
-				image_list.append([self.path + '/' + folder +'/' +image_, class_])
+				
+				if cnt_img_per_class <= N_val:
+					self.val_set.append([self.path + '/' + folder +'/' +image_, class_])
+				else:
+					self.train_set.append([self.path + '/' + folder +'/' +image_, class_])
 				cnt_img_per_class += 1
 			
 			class_ += 1
 
-		## shuffle and save into test and train
-		## TODO fix so that there are equal images for each class
-
-		for item in image_list:
-			print(item)
-			exit()
-
-		#np.random.shuffle(image_list)
-		#image_list = np.array(image_list)
-
-		#self.train_set = image_list[0:int(image_list.shape[0] * (1-self.train_val_split)),  :]
-		#self.val_set = image_list[int(image_list.shape[0] * (1-self.train_val_split)):-1,  :]
+			
 
 	''' Creates a generator for either training set or validation set
 	- IN:
