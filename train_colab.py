@@ -20,7 +20,7 @@ import os
 ## colab spesific
 train_path = '/data/ExpW'
 save_model_path = '/content/drive/My Drive/ResQBiometrics/Models/'
-new_model_name = 'colab_test.h5'
+new_model_name = 'model_1.h5'
 
 N_channels = 3
 N_images_per_class = 40
@@ -125,4 +125,4 @@ meta_data = {'model_name' : new_model_name,
 }
 np.save(save_model_path +'meta_data_'+ model_name, meta_data)
 
-#model.save(save_model_path + model_name + '.h5')
+model.save(save_model_path + model_name + '_test' +'.h5')

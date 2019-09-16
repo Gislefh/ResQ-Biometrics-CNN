@@ -30,11 +30,13 @@ test_gen = gen_test.flow_from_dir(set = 'test')
 
 
 
-model = load_model("Models\\From_Colab\\model_5.h5")
+model = load_model("Models\\From_Colab\\colab_test.h5")
+model.summary()
+exit()
 P = Predict(model, labels = ['angry','disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise'])
 
-#P.pred_from_cam()
-P.conf_matrix(test_gen, N_data)
+P.pred_from_cam()
+#P.conf_matrix(test_gen, N_data)
 exit()
 label_list = ['angry', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 
