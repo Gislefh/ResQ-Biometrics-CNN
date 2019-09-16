@@ -23,9 +23,9 @@ save_model_path = '/content/drive/My Drive/ResQBiometrics/Models/'
 new_model_name = 'model_1.h5'
 
 N_channels = 3
-N_images_per_class = 1000
+N_images_per_class = 3000
 batch_size = 16
-image_shape = (224, 224)
+image_shape = (100, 224)
 N_classes = 7
 X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
