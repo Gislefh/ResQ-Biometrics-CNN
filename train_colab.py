@@ -25,7 +25,7 @@ new_model_name = 'model_1.h5'
 N_channels = 3
 N_images_per_class = 3000
 batch_size = 16
-image_shape = (100, 224)
+image_shape = (100, 100)
 N_classes = 7
 X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
@@ -124,4 +124,4 @@ meta_data = {'model_name' : new_model_name,
 }
 np.save(save_model_path +'meta_data_'+ new_model_name, meta_data)
 
-model.save(save_model_path + 'test_' + new_model_name +  +'.h5')
+model.save(save_model_path + 'test_' + new_model_name + '.h5')
