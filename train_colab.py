@@ -123,6 +123,6 @@ meta_data = {'model_name' : new_model_name,
                 'model_history' :  history,
                 'model_input_shape' : X_shape,
 }
-np.save(save_model_path +'meta_data_'+ model_name, meta_data)
+np.save(save_model_path +'meta_data_'+ new_model_name, meta_data)
 
 model.save(save_model_path + new_model_name + '_test' +'.h5')
