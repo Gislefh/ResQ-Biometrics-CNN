@@ -140,10 +140,16 @@ class Generator:
 			for i in range(len(image_list)):
 				##choose random image from list
 				choice = np.random.choice(len(image_list[:, 0]))
-				self.image = cv2.imread( image_list[choice, 0])[:, :, 0:self.N_channels]
-				self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
+				orig_ch = cv2.imread( image_list[choice, 0]).shape[-1]
 				label = int(image_list[choice, 1])
 
+				if (orig_ch == 3) and (self.N_channels == 1):
+					im_tmp = cv2.imread( image_list[choice, 0])
+					self.image = np.expand_dims(cv2.cvtColor(im_tmp, cv2.COLOR_BGR2GRAY), axis = -1)
+				else:
+					self.image = cv2.imread( image_list[choice, 0])[:, :, 0:self.N_channels]
+
+			
 				#normalize image to [0,1]
 				self.image = np.clip(self.image / 255, 0, 1)
 			

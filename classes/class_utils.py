@@ -35,6 +35,7 @@ def get_vgg16_from_keras(input_shape, N_classes):
 	return model
 
 def get_vgg_w_imnet(input_shape, N_classes):
+
 	init_model = keras.applications.vgg16.VGG16(include_top=False, weights='imagenet', input_shape=input_shape, pooling='max', classes=None)
 
 	x = Dense(255, activation='relu')(init_model.output)
@@ -45,8 +46,8 @@ def get_vgg_w_imnet(input_shape, N_classes):
 	model = Model(init_model.input, preds)
 	
 
-	## freaze all but the last 10 layers. last 3 conv2d and the dense layers
-	for layer in model.layers[:-11]:
+	## freaze all but the last 14 layers. last 6 conv2d and the dense layers
+	for layer in model.layers[:-15]:
 		layer.trainable = False
 
 
