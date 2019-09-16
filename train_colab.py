@@ -125,4 +125,4 @@ meta_data = {'model_name' : new_model_name,
 }
 np.save(save_model_path +'meta_data_'+ model_name, meta_data)
 
-model.save(save_model_path + model_name + '_test' +'.h5')
+model.save(save_model_path + new_model_name + '_test' +'.h5')
