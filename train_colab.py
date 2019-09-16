@@ -23,7 +23,7 @@ save_model_path = '/content/drive/My Drive/ResQBiometrics/Models/'
 new_model_name = 'model_1.h5'
 
 N_channels = 3
-N_images_per_class = 3000
+N_images_per_class = 4000
 batch_size = 16
 image_shape = (100, 100)
 N_classes = 7
@@ -32,8 +32,8 @@ Y_shape = (batch_size, N_classes)
 val_size = 0.3
 
 gen_train = Generator(train_path, X_shape, Y_shape, N_classes, N_channels, batch_size, train_val_split = val_size, N_images_per_class=N_images_per_class)
-gen_train.add_rotate(max_abs_angle_deg=40)
-gen_train.add_gamma_transform(0.4,1.8)
+gen_train.add_rotate(max_abs_angle_deg=20)
+gen_train.add_gamma_transform(0.5,1.5)
 gen_train.add_flip()
 gen_train.add_shift(0.1)
 #gen_train.add_zoom(zoom_range= [0.2,2])
@@ -43,11 +43,11 @@ val_gen = gen_train.flow_from_dir(set = 'val', augment_validation = True)
 
 
 ### -- get model
-#m = SecModel(N_classes)
-#model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], N_channels))
+m = SecModel(N_classes)
+model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], N_channels))
 
 ### -- vgg16 + empty 
-model = get_vgg_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes)
+#model = get_vgg_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes)
 
 ### --- load model
 #model = load_model('Models\\model2.h5')
@@ -124,4 +124,4 @@ meta_data = {'model_name' : new_model_name,
 }
 np.save(save_model_path +'meta_data_'+ new_model_name, meta_data)
 
-model.save(save_model_path + 'test_' + new_model_name + '.h5')
+model.save(save_model_path + 'test_' + new_model_name)
