@@ -14,14 +14,14 @@ import h5py
 import os
 
 ## paths
-train_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\ExpW'
-new_model_name = 'model_5.h5'
+train_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\ExpW\\train'
+new_model_name = 'model_6.h5'
 save_model_path = 'Models\\'
 
 
 ## consts
 N_channels = 3
-N_images_per_class = 4000
+N_images_per_class = 2800
 batch_size = 16
 image_shape = (100, 100)
 N_classes = 7
@@ -32,7 +32,7 @@ val_size = 0.3
 
 ### generator
 gen_train = Generator(train_path, X_shape, Y_shape, N_classes, N_channels, batch_size, train_val_split = val_size, N_images_per_class=N_images_per_class)
-gen_train.add_rotate(max_abs_angle_deg=20)
+gen_train.add_rotate(max_abs_angle_deg=30)
 gen_train.add_gamma_transform(0.5,1.5)
 gen_train.add_flip()
 gen_train.add_shift(0.1)

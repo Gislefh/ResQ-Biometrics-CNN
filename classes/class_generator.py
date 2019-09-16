@@ -72,8 +72,8 @@ class Generator:
 		image_list = []
 		class_ = 0
 
-		self.val_set = []
-		self.train_set = []
+		tmp_val_set = []
+		tmp_train_set = []
 
 		for folder in os.listdir(self.path):
 			cnt_img_per_class = 0
@@ -93,14 +93,16 @@ class Generator:
 						break ##TODO fix
 				
 				if cnt_img_per_class <= N_val:
-					self.val_set.append([self.path + '/' + folder +'/' +image_, class_])
+					tmp_val_set.append([self.path + '/' + folder +'/' +image_, class_])
 				else:
-					self.train_set.append([self.path + '/' + folder +'/' +image_, class_])
+					tmp_train_set.append([self.path + '/' + folder +'/' +image_, class_])
 				cnt_img_per_class += 1
 			
 			class_ += 1
 
-			
+		self.val_set = np.array(tmp_val_set)
+		self.train_set = np.array(tmp_train_set)
+		
 
 	''' Creates a generator for either training set or validation set
 	- IN:
