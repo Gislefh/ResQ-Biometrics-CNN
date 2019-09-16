@@ -1,6 +1,6 @@
 import sys
 sys.path.insert(0, "classes")
-
+import tensorflow as tf
 import keras
 import numpy as np
 import cv2
@@ -26,7 +26,6 @@ Y_shape = (batch_size, N_classes)
 gen_test = Generator(test_path, X_shape, Y_shape, N_classes, N_channels, batch_size, N_images_per_class=200)
 N_data = gen_test.get_length_data()
 test_gen = gen_test.flow_from_dir(set = 'test')
-
 
 
 

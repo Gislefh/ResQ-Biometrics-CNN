@@ -22,10 +22,10 @@ train_path = '/data/ExpW'
 save_model_path = '/content/drive/My Drive/ResQBiometrics/Models/'
 new_model_name = 'model_1.h5'
 
-N_channels = 3
+N_channels = 1
 N_images_per_class = 4000
-batch_size = 16
-image_shape = (100, 100)
+batch_size = 64
+image_shape = (48, 48)
 N_classes = 7
 X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
@@ -119,7 +119,7 @@ meta_data = {'model_name' : new_model_name,
                 'train_path' : train_path,   
                 'model_classes': gen_train.get_classes(),
                 'model_augmentations' : gen_train.get_aug(),
-                'model_history' :  history,
+                'model_history' :  history.history,
                 'model_input_shape' : X_shape,
 }
 np.save(save_model_path +'meta_data_'+ new_model_name, meta_data)
