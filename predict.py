@@ -17,7 +17,7 @@ test_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\ExpW'
 
 N_channels = 3
 batch_size = 16
-model_shape_shape = (48, 48)
+model_shape_shape = (224, 224)
 N_classes = 7
 X_shape = (batch_size, model_shape_shape[0], model_shape_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
@@ -30,9 +30,7 @@ test_gen = gen_test.flow_from_dir(set = 'test')
 
 
 
-model = load_model("Models\\From_Colab\\colab_test.h5")
-model.summary()
-exit()
+model = load_model("Models\\From_Colab\\model_1.h5")
 P = Predict(model, labels = ['angry','disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise'])
 
 P.pred_from_cam()

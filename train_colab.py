@@ -23,7 +23,7 @@ save_model_path = '/content/drive/My Drive/ResQBiometrics/Models/'
 new_model_name = 'model_1.h5'
 
 N_channels = 3
-N_images_per_class = 40
+N_images_per_class = 1000
 batch_size = 16
 image_shape = (224, 224)
 N_classes = 7
@@ -32,10 +32,10 @@ Y_shape = (batch_size, N_classes)
 val_size = 0.3
 
 gen_train = Generator(train_path, X_shape, Y_shape, N_classes, N_channels, batch_size, train_val_split = val_size, N_images_per_class=N_images_per_class)
-gen_train.add_rotate(max_abs_angle_deg=40)
+gen_train.add_rotate(max_abs_angle_deg=50)
 gen_train.add_gamma_transform(0.4,1.8)
 gen_train.add_flip()
-gen_train.add_shift(0.15)
+gen_train.add_shift(0.2)
 #gen_train.add_zoom(zoom_range= [0.2,2])
 
 train_gen = gen_train.flow_from_dir(set = 'train')
@@ -113,11 +113,10 @@ prev_max_plus_one = np.amax(model_number_list) +1
 model_name = 'model_'+ str(prev_max_plus_one)
 """
 
-
+#'model_summary' : model.summary(),
 meta_data = {'model_name' : new_model_name,
                 'batch_size' : batch_size,
-                'train_path' : train_path,
-                'model_summary' : model.summary(),
+                'train_path' : train_path,   
                 'model_classes': gen_train.get_classes(),
                 'model_augmentations' : gen_train.get_aug(),
                 'model_history' :  history,
@@ -125,4 +124,4 @@ meta_data = {'model_name' : new_model_name,
 }
 np.save(save_model_path +'meta_data_'+ new_model_name, meta_data)
 
-model.save(save_model_path + new_model_name + '_test' +'.h5')
+model.save(save_model_path + 'test_' + new_model_name +  +'.h5')
