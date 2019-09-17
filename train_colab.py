@@ -20,13 +20,13 @@ import os
 ## colab spesific
 train_path = '/data/ExpW'
 save_model_path = '/content/drive/My Drive/ResQBiometrics/Models/'
-new_model_name = 'model_17_09_v3'
-load_model_path = '/content/drive/My Drive/ResQBiometrics/Models/model_17_09_v2.h5'
+new_model_name = 'model_17_09_2'
+#load_model_path = '/content/drive/My Drive/ResQBiometrics/Models/model_17_09_v2.h5'
 
-N_channels = 1
+N_channels = 3
 N_images_per_class = 3500
 batch_size = 32
-image_shape = (64, 64)
+image_shape = (100, 100)
 N_classes = 3
 X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
@@ -44,14 +44,14 @@ val_gen = gen_train.flow_from_dir(set = 'val', augment_validation = True)
 
 
 ### -- get model
-#m = SecModel(N_classes)
-#model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], N_channels))
+m = SecModel(N_classes)
+model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], N_channels))
 
 ### -- vgg16 + empty 
 #model = get_vgg_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes)
 
 ### --- load model
-model = load_model(load_model_path)
+#model = load_model(load_model_path)
 
 model.summary()
 
