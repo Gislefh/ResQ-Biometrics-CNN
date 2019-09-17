@@ -20,18 +20,18 @@ import os
 ## colab spesific
 train_path = '/data/ExpW'
 save_model_path = '/content/drive/My Drive/ResQBiometrics/Models/'
-new_model_name = 'model_1.h5'
+new_model_name = 'model_17_09'
 
 N_channels = 1
-N_images_per_class = 30000
+N_images_per_class = 3500
 batch_size = 32
-image_shape = (48, 48)
+image_shape = (64, 64)
 N_classes = 2
 X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
 val_size = 0.3
 
-gen_train = Generator(train_path, X_shape, Y_shape, N_classes, N_channels, batch_size, class_list=['happy', 'neutral'], train_val_split = val_size, N_images_per_class=N_images_per_class)
+gen_train = Generator(train_path, X_shape, Y_shape, N_classes, N_channels, batch_size, class_list=['happy', 'neutral', 'angry'], train_val_split = val_size, N_images_per_class=N_images_per_class)
 gen_train.add_rotate(max_abs_angle_deg=20)
 gen_train.add_gamma_transform(0.5,1.5)
 gen_train.add_flip()
@@ -63,7 +63,7 @@ early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
                                                 baseline=None, 
                                                 restore_best_weights=True)
 
-save_best = keras.callbacks.ModelCheckpoint(save_model_path + new_model_name, 
+save_best = keras.callbacks.ModelCheckpoint(save_model_path + new_model_name + '.h5', 
                                 monitor='val_loss',
                                 verbose=1, 
                                 save_best_only=True, 
@@ -88,7 +88,7 @@ history = model.fit_generator(train_gen,
                     validation_data = val_gen,
                     steps_per_epoch = steps_per_epoch, 
                     validation_steps = val_setps_per_epoch,
-                    epochs = 40,
+                    epochs = 25,
                     callbacks = callback,
                     use_multiprocessing = False)
 
@@ -124,4 +124,4 @@ meta_data = {'model_name' : new_model_name,
 }
 np.save(save_model_path +'meta_data_'+ new_model_name, meta_data)
 
-model.save(save_model_path + 'test_' + new_model_name)
+#model.save(save_model_path + 'test_' + new_model_name)
