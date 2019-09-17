@@ -118,8 +118,9 @@ class Generator:
 			self.train_val_split = 0
 
 		# create sets
+		T = TicToc()
 		self.__from_dir(self.N_images_per_class)
-
+		
 		self.X = np.zeros(self.X_shape)
 		self.Y = np.zeros(self.Y_shape)
 
@@ -153,7 +154,7 @@ class Generator:
 				#normalize image to [0,1]
 				self.image = np.clip(self.image / 255, 0, 1)
 			
-				
+
 				### add augmentation	
 				if (set == 'train') or (set == 'val' and augment_validation):
 					for j, aug_method in enumerate(self.aug_method):

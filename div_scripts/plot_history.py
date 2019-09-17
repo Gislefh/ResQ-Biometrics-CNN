@@ -1,19 +1,20 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-path_to_meta_data = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\ResQ-Biometrics-CNN\\Models\\From_Colab\\meta_data_model_5.npy'
+path_to_meta_data = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\ResQ-Biometrics-CNN\\Models\\From_Colab\\meta_data_model_16_09.npy'
 
 meta_data = np.load(path_to_meta_data, allow_pickle = True)
 
 history = meta_data.item()['model_history']
 
-print(history.history['val_loss'])
+print(history['val_loss'])
 
-epochs = list(range(len(history.history['val_loss'])))
-val_loss = history.history['val_loss']
-loss = history.history['loss']
-val_acc = history.history['val_acc']
-acc = history.history['acc']
+
+epochs = list(range(len(history['val_loss'])))
+val_loss = history['val_loss']
+loss = history['loss']
+val_acc = history['val_acc']
+acc = history['acc']
 
 plt.figure('Traning summary')
 plt.subplot(211)

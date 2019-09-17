@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 from class_model import SecModel
 from class_generator import Generator
-from class_utils import get_vgg16_from_keras, get_vgg_w_imnet
+from class_utils import get_vgg16_from_keras, get_vgg_w_imnet, add_classes_to_model
 
 import keras
 from keras.models import load_model
@@ -15,23 +15,23 @@ import os
 
 ## paths
 train_path = 'C:\\Users\\47450\Documents\\ResQ Biometrics\\Data sets\\Expw_and_FRE_ch\\train'
-new_model_name = 'model_8.h5'
+new_model_name = 'model_10.h5'
 save_model_path = 'Models\\'
 
 
 ## consts
 N_channels = 1
 N_images_per_class = 4000
-batch_size = 16
+batch_size = 32
 image_shape = (48, 48)
-N_classes = 7
+N_classes = 3
 X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
 val_size = 0.3
 
 
 ### generator
-gen_train = Generator(train_path, X_shape, Y_shape, N_classes, N_channels, batch_size, train_val_split = val_size, N_images_per_class=N_images_per_class)
+gen_train = Generator(train_path, X_shape, Y_shape, N_classes, N_channels, batch_size, class_list=['happy', 'neutral', 'angry'], train_val_split=val_size, N_images_per_class=N_images_per_class)
 gen_train.add_rotate(max_abs_angle_deg=20)
 gen_train.add_gamma_transform(0.5,1.5)
 gen_train.add_flip()
@@ -56,12 +56,15 @@ val_gen = gen_train.flow_from_dir(set = 'val', augment_validation = True)
 
 
 ### --- load model
-model = load_model('Models\\model_8.h5')
+model = load_model('Models\\model_10.h5')
+
+## use pretrained model
+#model = add_classes_to_model('Models\\model_9.h5', 3, 10)
 
 ## callbacks
 early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
                                                 min_delta=0, 
-                                                patience=5, 
+                                                patience=10, 
                                                 verbose=0, 
                                                 mode='auto', 
                                                 baseline=None, 
@@ -87,7 +90,7 @@ history = model.fit_generator(train_gen,
                     validation_data = val_gen,
                     steps_per_epoch = steps_per_epoch, 
                     validation_steps = val_setps_per_epoch,
-                    epochs = 20,
+                    epochs = 200,
                     callbacks = callback,
                     use_multiprocessing = False)
 """ TODO FIX
@@ -121,4 +124,4 @@ meta_data = {'model_name' : new_model_name,
 }
 np.save(save_model_path +'meta_data_'+ _new_model_name, meta_data)
 
-model.save(save_model_path + _new_model_name + '.h5')
+#model.save(save_model_path + _new_model_name + '.h5')

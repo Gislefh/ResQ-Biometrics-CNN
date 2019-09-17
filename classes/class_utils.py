@@ -46,9 +46,26 @@ def get_vgg_w_imnet(input_shape, N_classes):
 	model = Model(init_model.input, preds)
 	
 
-	## freaze all but the last 14 layers. last 6 conv2d and the dense layers
+	## freeze all but the last 14 layers. last 6 conv2d and the dense layers
 	for layer in model.layers[:-15]:
 		layer.trainable = False
 
 
 	return model
+
+
+def add_classes_to_model(model_path, N_classes, freeze_N_layers = None):
+	
+	
+
+	model = load_model(model_path)
+	model.pop()
+	model.add(Dense(N_classes, activation='softmax', name = 'pred_layer'))
+	
+	if freeze_N_layers != None:	
+		for layer in model.layers[:-(freeze_N_layers+1)]:
+			layer.trainable = False
+
+	return model
+
+
