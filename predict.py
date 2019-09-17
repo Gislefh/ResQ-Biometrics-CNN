@@ -10,31 +10,45 @@ from class_predict import Predict
 import matplotlib.pyplot as plt
 
 ### consts
-#test_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\face-expression-recognition-dataset\\images\\validation'
-#from_web_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\Data_set_from_web'
-#path_to_google_data_cvs =  'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\FEC_dataset\\faceexp-comparison-data-train-public.csv'
-test_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\ExpW\\validation'
+train_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\face-expression-recognition-dataset\\images\\train'
+test_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\face-expression-recognition-dataset\\images\\validation'
 
 N_channels = 1
 batch_size = 16
 model_shape_shape = (48, 48)
-N_classes = 2
+N_classes = 3
 X_shape = (batch_size, model_shape_shape[0], model_shape_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
 
 ## create ganerator
-gen_test = Generator(test_path, X_shape, Y_shape, N_classes, N_channels, batch_size, N_images_per_class=100, class_list = ['happy', 'neutral'])
+gen_test = Generator(test_path, X_shape, Y_shape, N_classes, N_channels, batch_size, N_images_per_class=None, class_list = ['happy', 'neutral', 'angry'])
 N_data = gen_test.get_length_data()
 test_gen = gen_test.flow_from_dir(set = 'test')
 
 labels = gen_test.get_classes()
 
-model = load_model("Models\\model_9.h5")
+model = load_model("Models\\model_12.h5")
 P = Predict(model, labels = labels)
+
 
 #P.pred_from_cam()
 P.conf_matrix(test_gen, N_data)
+exit()
 
 
 
 
+cnt_tot = 0
+cnt_correct = 0
+for x,y in test_gen:
+    for i in range(x.shape[-1]):
+        
+        gt = np.argmax(y[i])
+        pred = np.argmax(model.predict(x[i:i+1]))
+        #print(labels[gt], labels[np.argmax(pred)])
+        if pred == gt:
+            cnt_correct += 1
+        #plt.imshow(x[i, :, :, 0], cmap = 'gray')
+        #plt.show()
+        cnt_tot += 1
+    print(cnt_correct/cnt_tot)

@@ -3,7 +3,7 @@ import tensorflow
 import numpy as np
 
 from keras.models import Sequential
-from keras.layers import Dense, Dropout, Flatten
+from keras.layers import Dense, Dropout, Flatten, GlobalMaxPooling2D
 from keras.layers import Conv2D, MaxPooling2D
 
 
@@ -67,17 +67,22 @@ class SecModel:
 
 	def random_CNN(self, input_shape):
 		M = Sequential()
-		M.add(Conv2D(32, (5, 5), activation='relu', input_shape = input_shape))
+		M.add(Conv2D(32, (4, 4), activation='relu', input_shape = input_shape))
+		M.add(MaxPooling2D(pool_size=(2, 2)))
+		M.add(Conv2D(64, (4, 4), activation='relu'))
 		M.add(MaxPooling2D(pool_size=(2, 2)))
 		M.add(Dropout(0.05))
 
-		M.add(Conv2D(64, (5, 5), activation='relu'))
+		M.add(Conv2D(128, (4, 4), activation='relu'))
 		M.add(MaxPooling2D(pool_size=(2, 2)))
+		M.add(Conv2D(255, (4, 4), activation='relu'))
 		M.add(Dropout(0.05))
+		M.add(GlobalMaxPooling2D())
 
-		M.add(Conv2D(128, (5, 5), activation='relu'))
-		M.add(MaxPooling2D(pool_size=(2, 2)))
-		M.add(Dropout(0.05))
+		#M.add(Conv2D(128, (3, 3), activation='relu'))
+		#M.add(Conv2D(128, (3, 3), activation='relu'))
+		#M.add(MaxPooling2D(pool_size=(2, 2)))
+		#M.add(Dropout(0.05))
 
 		#M.add(Conv2D(128, (3, 3), activation='relu'))
 		#M.add(Conv2D(128, (3, 3), activation='relu'))
@@ -94,10 +99,10 @@ class SecModel:
 		#M.add(MaxPooling2D(pool_size=(2, 2)))
 		#M.add(Dropout(0.1))
 
-		M.add(Flatten())
-		M.add(Dense(255, activation='relu'))
-		M.add(Dropout(0.1))
-		M.add(Dense(255, activation='relu'))
+		#M.add(Flatten())
+		#M.add(Dense(255, activation='relu'))
+		#M.add(Dropout(0.1))
+		M.add(Dense(512, activation='relu'))
 		M.add(Dropout(0.1))
 		M.add(Dense(self.N_classes, activation='softmax'))
 

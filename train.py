@@ -14,8 +14,8 @@ import h5py
 import os
 
 ## paths
-train_path = 'C:\\Users\\47450\Documents\\ResQ Biometrics\\Data sets\\Expw_and_FRE_ch\\train'
-new_model_name = 'model_10.h5'
+train_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\face-expression-recognition-dataset\\images\\train'
+new_model_name = 'model_12.h5'
 save_model_path = 'Models\\'
 
 
@@ -23,7 +23,7 @@ save_model_path = 'Models\\'
 N_channels = 1
 N_images_per_class = 4000
 batch_size = 32
-image_shape = (48, 48)
+image_shape = (80, 80)
 N_classes = 3
 X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
@@ -44,9 +44,9 @@ val_gen = gen_train.flow_from_dir(set = 'val', augment_validation = True)
 
 
 ### -- get new model
-#m = SecModel(N_classes)
-#model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], N_channels))
-#model.summary()
+m = SecModel(N_classes)
+model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], N_channels))
+model.summary()
 
 ### -- vgg16 + empty
 #model = get_vgg_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes)
@@ -56,7 +56,7 @@ val_gen = gen_train.flow_from_dir(set = 'val', augment_validation = True)
 
 
 ### --- load model
-model = load_model('Models\\model_10.h5')
+#model = load_model('Models\\model_10.h5')
 
 ## use pretrained model
 #model = add_classes_to_model('Models\\model_9.h5', 3, 10)
@@ -93,35 +93,17 @@ history = model.fit_generator(train_gen,
                     epochs = 200,
                     callbacks = callback,
                     use_multiprocessing = False)
-""" TODO FIX
-# save as new model
-folder_list = os.listdir('Models')
-model_number_list = []
-for item in folder_list:
-    if item.spilt('.')[-1] == 'h5':
-        try:
-            name = item.split('.')[0]
-            number = int(name.split('_')[-1])
-        except:
-            number = 99
-
-        model_number_list.append(number)
-        
-prev_max_plus_one = np.amax(model_number_list) +1 
-
-model_name = 'model_'+ str(prev_max_plus_one)
-"""
 
 
+#                'model_summary' : model.summary(),
 meta_data = {'model_name' : new_model_name,
                 'batch_size' : batch_size,
                 'train_path' : train_path,
-                'model_summary' : model.summary(),
                 'model_classes': gen_train.get_classes(),
                 'model_augmentations' : gen_train.get_aug(),
-                'model_history' :  history,
+                'model_history' :  history.history,
                 'model_input_shape' : X_shape,
 }
-np.save(save_model_path +'meta_data_'+ _new_model_name, meta_data)
+np.save(save_model_path +'meta_data_'+ new_model_name, meta_data)
 
 #model.save(save_model_path + _new_model_name + '.h5')

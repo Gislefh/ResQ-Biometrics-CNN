@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-path_to_meta_data = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\ResQ-Biometrics-CNN\\Models\\From_Colab\\meta_data_model_16_09.npy'
+path_to_meta_data = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\ResQ-Biometrics-CNN\\Models\\model_9.npy'
 
 meta_data = np.load(path_to_meta_data, allow_pickle = True)
 
