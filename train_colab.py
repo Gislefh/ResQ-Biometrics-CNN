@@ -20,8 +20,8 @@ import os
 ## colab spesific
 train_path = '/data/ExpW'
 save_model_path = '/content/drive/My Drive/ResQBiometrics/Models/'
-new_model_name = 'model_17_09_v2'
-load_model_path = '/content/drive/My Drive/ResQBiometrics/Models/model_17_09.h5'
+new_model_name = 'model_17_09_v3'
+load_model_path = '/content/drive/My Drive/ResQBiometrics/Models/model_17_09_v2.h5'
 
 N_channels = 1
 N_images_per_class = 3500
