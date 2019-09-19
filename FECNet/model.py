@@ -176,7 +176,7 @@ def NN2_model():
     #fc -layers
     out_shape = inception_4e.shape[1:3]
     x = AveragePooling2D(pool_size = out_shape)(inception_4e)
-    print(x.shape)
+    x = Dense(512, activation='reluy')
 
     # --------------------
     #L2 norm

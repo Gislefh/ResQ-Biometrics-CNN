@@ -15,7 +15,7 @@ import os
 
 ## paths
 train_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\face-expression-recognition-dataset\\images\\train'
-new_model_name = 'model_12.h5'
+new_model_name = 'model_test_tensorboard.h5'
 save_model_path = 'Models\\'
 
 
@@ -77,7 +77,21 @@ save_best = keras.callbacks.ModelCheckpoint(save_model_path + new_model_name,
                                 save_weights_only=False, 
                                 mode='min', 
                                 period=1)
-callback = [save_best, early_stop]
+
+
+tensorboard = keras.callbacks.TensorBoard(log_dir='C:\\Users\\47450\\Documents\\ResQ Biometrics\\ResQ-Biometrics-CNN\\Models\\Tensorboard', 
+                                            histogram_freq=0, 
+                                            batch_size=batch_size, 
+                                            write_graph=True, 
+                                            write_grads=False, 
+                                            write_images=True, 
+                                            embeddings_freq=0, 
+                                            embeddings_layer_names=None, 
+                                            embeddings_metadata=None, 
+                                            embeddings_data=None, 
+                                            update_freq='epoch')
+
+callback = [tensorboard]
 
 model.compile(loss='categorical_crossentropy',
           optimizer='adam',
@@ -90,7 +104,7 @@ history = model.fit_generator(train_gen,
                     validation_data = val_gen,
                     steps_per_epoch = steps_per_epoch, 
                     validation_steps = val_setps_per_epoch,
-                    epochs = 200,
+                    epochs = 20,
                     callbacks = callback,
                     use_multiprocessing = False)
 
