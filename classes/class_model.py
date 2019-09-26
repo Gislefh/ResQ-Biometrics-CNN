@@ -2,9 +2,9 @@ import keras
 import tensorflow
 import numpy as np
 
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Flatten, GlobalMaxPooling2D
-from keras.layers import Conv2D, MaxPooling2D
+from keras.models import Sequential, Model
+from keras.layers import Dense, Dropout, Flatten, GlobalMaxPooling2D, Conv2D, MaxPooling2D, Input
+
 
 
 class SecModel:
@@ -77,7 +77,8 @@ class SecModel:
 		M.add(MaxPooling2D(pool_size=(2, 2)))
 		M.add(Conv2D(255, (4, 4), activation='relu'))
 		M.add(Dropout(0.05))
-		M.add(GlobalMaxPooling2D())
+		M.add(MaxPooling2D(pool_size=(2, 2)))
+		#M.add(GlobalMaxPooling2D())
 
 		#M.add(Conv2D(128, (3, 3), activation='relu'))
 		#M.add(Conv2D(128, (3, 3), activation='relu'))
@@ -99,14 +100,47 @@ class SecModel:
 		#M.add(MaxPooling2D(pool_size=(2, 2)))
 		#M.add(Dropout(0.1))
 
-		#M.add(Flatten())
+		M.add(Flatten())
 		#M.add(Dense(255, activation='relu'))
 		#M.add(Dropout(0.1))
 		M.add(Dense(512, activation='relu'))
 		M.add(Dropout(0.1))
 		M.add(Dense(self.N_classes, activation='softmax'))
 
+
 		return M
 
 
 
+class NonSecModel:
+
+	def __init__(self, input_shape, N_classes):
+		self.input_shape = input_shape
+		self.N_classes = N_classes
+		
+
+	def test_model(self):
+		input_ = Input(shape = self.input_shape)
+
+		x = Conv2D(32, (4, 4), activation='relu', input_shape = self.input_shape)(input_)
+		#x = MaxPooling2D(pool_size=(2, 2))(x)
+		#x = Dropout(0.1)(x)
+
+		x = Conv2D(64, (4, 4), activation='relu')(x)
+		#x = MaxPooling2D(pool_size=(2, 2))(x)
+		#x = Dropout(0.1)(x)
+
+		#x = Conv2D(128, (4, 4), activation='relu')(x)
+		#x = MaxPooling2D(pool_size=(2, 2))(x)
+		#x = Dropout(0.1)(x)
+
+		#x = Conv2D(255, (4, 4), activation='relu')(x)
+		#x = Dropout(0.1)(x)
+		#x = GlobalMaxPooling2D()(x)
+
+		#x = Dense(512, activation='relu')(x)
+		#x = Dropout(0.1)(x)
+		#x = Dense(self.N_classes, activation='softmax')(x)
+
+		self.model = Model(inputs=input_, outputs=x)
+		return self.model

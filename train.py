@@ -1,28 +1,32 @@
 import sys
 sys.path.insert(0, "classes")
-
+from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 
 from class_model import SecModel
 from class_generator import Generator
-from class_utils import get_vgg16_from_keras, get_vgg_w_imnet, add_classes_to_model
+from class_utils import get_vgg16_from_keras, get_vgg_w_imnet, add_classes_to_model, meta_data
 
 import keras
 from keras.models import load_model
 import h5py
+import tensorflow as tf
 import os
 
 ## paths
 train_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\face-expression-recognition-dataset\\images\\train'
-new_model_name = 'model_test_tensorboard.h5'
+new_model_name = 'model_test_viz6.h5'
 save_model_path = 'Models\\'
+
+if new_model_name in os.listdir(save_model_path):
+    print('Model name exists. Change the model name')
 
 
 ## consts
 N_channels = 1
-N_images_per_class = 4000
-batch_size = 32
+N_images_per_class = 2000
+batch_size = 64
 image_shape = (80, 80)
 N_classes = 3
 X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
@@ -32,10 +36,10 @@ val_size = 0.3
 
 ### generator
 gen_train = Generator(train_path, X_shape, Y_shape, N_classes, N_channels, batch_size, class_list=['happy', 'neutral', 'angry'], train_val_split=val_size, N_images_per_class=N_images_per_class)
-gen_train.add_rotate(max_abs_angle_deg=20)
-gen_train.add_gamma_transform(0.5,1.5)
-gen_train.add_flip()
-gen_train.add_shift(0.1)
+#gen_train.add_rotate(max_abs_angle_deg=20)
+#gen_train.add_gamma_transform(0.5,1.5)
+#gen_train.add_flip()
+#gen_train.add_shift(0.1)
 #gen_train.add_zoom(zoom_range= [0.2,2])
 
 train_gen = gen_train.flow_from_dir(set = 'train')
@@ -44,16 +48,18 @@ val_gen = gen_train.flow_from_dir(set = 'val', augment_validation = True)
 
 
 ### -- get new model
-m = SecModel(N_classes)
-model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], N_channels))
-model.summary()
+#m = SecModel(N_classes)
+#model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], N_channels))
+#model.summary()
 
 ### -- vgg16 + empty
-#model = get_vgg_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes)
+model = get_vgg_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes)
 
 ### -- fresh vgg
-#model = get_vgg16_from_keras(input_shape, N_classes)
-
+#model = get_vgg16_from_keras((image_shape[0], image_shape[1], N_channels), N_classes)
+#model.save(save_model_path + new_model_name)
+#model = keras.applications.vgg16.VGG16(include_top=False, weights= None, input_tensor=None, input_shape=(image_shape[0], image_shape[1], N_channels), pooling=None, classes=N_classes)
+#exit()
 
 ### --- load model
 #model = load_model('Models\\model_10.h5')
@@ -78,12 +84,17 @@ save_best = keras.callbacks.ModelCheckpoint(save_model_path + new_model_name,
                                 mode='min', 
                                 period=1)
 
+## --save as date--
+tensorboard_name = datetime.now().strftime("%Y%m%d-%H%M%S")
 
-tensorboard = keras.callbacks.TensorBoard(log_dir='C:\\Users\\47450\\Documents\\ResQ Biometrics\\ResQ-Biometrics-CNN\\Models\\Tensorboard', 
+## save with parameters 
+#tensorboard_name = 'batch_size = {}, N_classes = {}'.format(str(batch_size), str(N_classes))  
+
+tensorboard = keras.callbacks.TensorBoard(log_dir='C:\\Users\\47450\\Documents\\ResQ Biometrics\\ResQ-Biometrics-CNN\\Models\\Tensorboard\\' + tensorboard_name, 
                                             histogram_freq=0, 
                                             batch_size=batch_size, 
                                             write_graph=True, 
-                                            write_grads=False, 
+                                            write_grads=True, 
                                             write_images=True, 
                                             embeddings_freq=0, 
                                             embeddings_layer_names=None, 
@@ -91,7 +102,8 @@ tensorboard = keras.callbacks.TensorBoard(log_dir='C:\\Users\\47450\\Documents\\
                                             embeddings_data=None, 
                                             update_freq='epoch')
 
-callback = [tensorboard]
+callback = [tensorboard, save_best]
+
 
 model.compile(loss='categorical_crossentropy',
           optimizer='adam',
@@ -104,20 +116,20 @@ history = model.fit_generator(train_gen,
                     validation_data = val_gen,
                     steps_per_epoch = steps_per_epoch, 
                     validation_steps = val_setps_per_epoch,
-                    epochs = 20,
+                    epochs = 10,
                     callbacks = callback,
                     use_multiprocessing = False)
 
 
-#                'model_summary' : model.summary(),
-meta_data = {'model_name' : new_model_name,
+meta_data_dict = {'model_name' : new_model_name,
+                'train_size' : steps_per_epoch*batch_size,
+                'val_size' : val_setps_per_epoch*batch_size,
                 'batch_size' : batch_size,
                 'train_path' : train_path,
                 'model_classes': gen_train.get_classes(),
                 'model_augmentations' : gen_train.get_aug(),
-                'model_history' :  history.history,
                 'model_input_shape' : X_shape,
+                'N_epochs' : len(history.history['val_loss']),
+                'model_used' : 'random CNN'
 }
-np.save(save_model_path +'meta_data_'+ new_model_name, meta_data)
-
-#model.save(save_model_path + _new_model_name + '.h5')
+meta_data(new_model_name, meta_data_dict)

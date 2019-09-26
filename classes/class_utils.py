@@ -1,7 +1,7 @@
 import numpy as np
 import keras
 from keras.models import Sequential, load_model, Model
-from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D
+from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D, Input
 
 """
 --- From numerical value to one hot encoded ---
@@ -28,7 +28,7 @@ def get_vgg16_from_keras(input_shape, N_classes):
 		inp_shape = None
 
 	else:
-		inc_top = True
+		inc_top = False
 		inp_shape = input_shape
 
 	model = keras.applications.vgg16.VGG16(include_top=inc_top, weights= None, input_tensor=None, input_shape=inp_shape, pooling=None, classes=N_classes)
@@ -69,3 +69,19 @@ def add_classes_to_model(model_path, N_classes, freeze_N_layers = None):
 	return model
 
 
+def meta_data(model_name, data, path_to_folder = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\ResQ-Biometrics-CNN\Models\\Tensorboard\\metadata_models\\'):
+	
+	file1 = open(path_to_folder + model_name + '.txt', 'w') 
+	file1.write('Model name: ' + model_name + '\n') 
+	for key in data.keys():
+		file1.write(key + ' : ' + str(data[key]) + '\n')
+	file1.close()
+  
+
+def test_model():
+	myInput = Input(shape=(96, 96, 3))
+
+	x = Conv2D(32, (4, 4), activation='relu', input_shape=(96, 96, 3))(myInput)
+	x = Conv2D(32, (4, 4), activation='relu')(x)
+	M = Model(inputs=myInput, outputs=x)
+	return M
