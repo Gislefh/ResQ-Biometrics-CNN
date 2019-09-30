@@ -1,9 +1,14 @@
-import numpy as np
+from datetime import datetime
 import os
+import numpy as np
+import keras
 import cv2
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 from scipy import ndimage
 from class_utils import one_hot
+from class_model import SecModel
+from random import shuffle
 
 from pytictoc import TicToc
 import csv
@@ -11,236 +16,210 @@ import csv
 
 class GetDataset:
 
+    def __init__(self, path, X_shape, N_classes, N_channels, train_val_split=0.3, class_list=[],
+                 N_images_per_class=None):
 
-	def __init__(self, path, X_shape, Y_shape, N_classes, N_channels, train_val_split = 0.3, class_list = [], N_images_per_class = None):
+        self.path = path  # path to folder, str
+        # shape of output, ( width, height, channel) or (width, height, channels)
+        self.X_shape = X_shape
+        # self.Y_shape = Y_shape  # shape of ground truth, (samples, classes) for classification
+        self.N_classes = N_classes  # number of classes, int
+        # number of channels in the images, 1 is gray, 3 is color
+        self.N_channels = N_channels
+        # self.batch_size = batch_size    #number of samples in a batch
+        self.image = None
+        self.aug_method = []
+        self.aug_args = []
+        self.train_val_split = train_val_split  # defaults to 0.3
+        self.N_images_per_class = N_images_per_class
 
-		self.path = path 				#path to folder, str
-		self.X_shape = X_shape			#shape of output, (samples, x, y, channel) or (samples, x, y, z, channels)
-		self.Y_shape = Y_shape			#shape of ground truth, (samples, classes) for classification
-		self.N_classes = N_classes		#number of classes, int
-		self.N_channels = N_channels	#number of channels in the images, 1 is gray, 3 is color
-		#self.batch_size = batch_size	#number of samples in a batch
-		self.image = None
-		self.aug_method = []
-		self.aug_args = []
-		self.train_val_split = train_val_split 	#defaults to 0.3
-		self.N_images_per_class = N_images_per_class
-		if class_list:
-			self.class_list = class_list
-		else:
-			self.class_list = []
+        if class_list:
+            self.class_list = class_list
+        else:
+            self.class_list = []
 
-	def __from_dir(self, N_images_per_class):
+    def __from_dir(self, N_images_per_class):
 
-		image_list = []
-		class_ = 0
+        image_list = []
+        class_ = 0
 
-		tmp_val_set = []
-		tmp_train_set = []
+        tmp_val_set = []
+        tmp_train_set = []
 
-		for folder in os.listdir(self.path):
-			cnt_img_per_class = 0
-			if self.class_list:
-				if folder not in self.class_list:
-					continue
-			
-			## saving N_val first images as validation
-			if N_images_per_class != None:
-				N_val = int(N_images_per_class * self.train_val_split)
-			else:
-				N_val = int(len(os.listdir(self.path +'/' +folder)) * self.train_val_split)
+        for folder in os.listdir(self.path):
+            cnt_img_per_class = 0
+            if self.class_list:
+                if folder not in self.class_list:
+                    continue
 
-			for image_ in os.listdir(self.path +'/' +folder):
-				if N_images_per_class != None:
-					if cnt_img_per_class > N_images_per_class:
-						break ##TODO fix
-				
-				if cnt_img_per_class <= N_val:
-					tmp_val_set.append([self.path + '/' + folder +'/' +image_, class_])
-				else:
-					tmp_train_set.append([self.path + '/' + folder +'/' +image_, class_])
-				cnt_img_per_class += 1
-			
-			class_ += 1
+            # saving N_val first images as validation
+            if N_images_per_class != None:
+                N_val = int(N_images_per_class * self.train_val_split)
+            else:
+                N_val = int(len(os.listdir(self.path + '/' + folder))
+                            * self.train_val_split)
 
-		self.val_set = np.array(tmp_val_set)
-		self.train_set = np.array(tmp_train_set)
-		
+            for image_ in os.listdir(self.path + '/' + folder):
+                if N_images_per_class != None:
+                    if cnt_img_per_class > N_images_per_class:
+                        break  # TODO fix
 
-	''' Creates a generator for either training set or validation set
-	- IN:
-	set: either val, train or test. str
-	N_images_per_class: how many images to get per class
-	train_val_split: how much of the data thats used as validaion
-	'''
-    def flow_from_dir(self, set = 'train', augment_validation = True):
-		if set == 'test':
-			self.train_val_split = 0
+                if cnt_img_per_class <= N_val:
+                    tmp_val_set.append(
+                        [self.path + '/' + folder + '/' + image_, class_])
+                else:
+                    tmp_train_set.append(
+                        [self.path + '/' + folder + '/' + image_, class_])
+                cnt_img_per_class += 1
+
+            class_ += 1
+
+        self.val_set = np.array(tmp_val_set)
+        self.train_set = np.array(tmp_train_set)
+
+    ''' Creates a generator for either training set or validation set
+    - IN:
+    set: either val, train or test. str
+    N_images_per_class: how many images to get per class
+    train_val_split: how much of the data thats used as validaion
+    '''
+
+    def flow_from_dir(self, set='train', augment_validation=True):
+        if set == 'test':
+            self.train_val_split = 0
 
         self.__from_dir(self.N_images_per_class)
 
-	    self.X = np.zeros(self.X_shape)
-		self.Y = np.zeros(self.Y_shape)
+        self.X = np.zeros(
+            (len(self.train_set), self.X_shape[0], self.X_shape[1], self.X_shape[2]), np.float32)
+        self.Y = np.zeros((len(self.train_set), self.N_classes), np.int8)
 
-		if set == 'train':
-			tot_list = self.train_set
-		elif set == 'val':
-			tot_list = self.val_set
-		elif set == 'test':
-			tot_list = self.train_set
-		else:
-			print("select either: 'train', 'val' or 'test'")
-			exit()
-        
+        if set == 'train':
+            tot_list = self.train_set
+        elif set == 'val':
+            tot_list = self.val_set
+        elif set == 'test':
+            tot_list = self.train_set
+        else:
+            print("select either: 'train', 'val' or 'test'")
+            exit()
 
-        ### place code here
+        index_of_element = list(range(len(tot_list)))
+        shuffle(index_of_element)
 
+        print("Collecting image data .....")
+        for i in tqdm(range(len(tot_list))):
 
+            choice = index_of_element[i]
+            orig_ch = cv2.imread(tot_list[choice, 0]).shape[-1]
+            label = int(tot_list[choice, 1])
 
+            if (orig_ch == 3) and (self.N_channels == 1):
+                im_tmp = cv2.imread(tot_list[choice, 0])
+                self.image = np.expand_dims(cv2.cvtColor(
+                    im_tmp, cv2.COLOR_BGR2GRAY), axis=-1)
+            else:
+                self.image = cv2.imread(tot_list[choice, 0])[
+                    :, :, 0:self.N_channels]
 
-        return (X, y)
-    
-    def flow_from_dir_old(self, set = 'train', augment_validation = True):
-		
+            # normalize image to [0,1]
+            self.image = np.clip(self.image / 255, 0, 1)
 
-		if set == 'test':
-			self.train_val_split = 0
+            # reshape image
+            if self.image.shape != self.X[0].shape:
+                self.X[i] = self.__im_reshape(self.image.shape, self.image)
+            else:
+                self.X[i] = self.image
 
-		# create sets
-		T = TicToc()
-		self.__from_dir(self.N_images_per_class)
-		
-		self.X = np.zeros(self.X_shape)
-		self.Y = np.zeros(self.Y_shape)
+            # one hot encode ground truth
+            if self.class_list:
+                self.Y[i] = one_hot(label, len(self.class_list))
+            else:
+                self.Y[i] = one_hot(label, self.N_classes)
 
-		if set == 'train':
-			tot_list = self.train_set
-		elif set == 'val':
-			tot_list = self.val_set
-		elif set == 'test':
-			tot_list = self.train_set
-		else:
-			print("select either: 'train', 'val' or 'test'")
-			exit()
-
-		while True:
-
-			image_list = tot_list.copy()
-
-			for i in range(len(image_list)):
-				##choose random image from list
-				choice = np.random.choice(len(image_list[:, 0]))
-				orig_ch = cv2.imread( image_list[choice, 0]).shape[-1]
-				label = int(image_list[choice, 1])
-
-				if (orig_ch == 3) and (self.N_channels == 1):
-					im_tmp = cv2.imread( image_list[choice, 0])
-					self.image = np.expand_dims(cv2.cvtColor(im_tmp, cv2.COLOR_BGR2GRAY), axis = -1)
-				else:
-					self.image = cv2.imread( image_list[choice, 0])[:, :, 0:self.N_channels]
-
-			
-				#normalize image to [0,1]
-				self.image = np.clip(self.image / 255, 0, 1)
-			
-
-				### add augmentation	
-				if (set == 'train') or (set == 'val' and augment_validation):
-					for j, aug_method in enumerate(self.aug_method):
-						if self.aug_args[j] == None:
-							aug_method()
-						else:
-							aug_method(self.aug_args[j])
-						
-				## reshape image
-				if self.image.shape != self.X[0].shape:
-					self.X[i%self.batch_size] = self.__im_reshape(self.image.shape, self.image)
-				else:
-					self.X[i%self.batch_size] = self.image
-
-				## one hot encode ground truth
-				if self.class_list:
-					self.Y[i%self.batch_size] = one_hot(label, len(self.class_list))
-				else:
-					self.Y[i%self.batch_size] = one_hot(label, self.N_classes)
-
-				# delete this entry from the list
-				image_list = np.delete(image_list, choice, 0)
+        return self.X, self.Y
 
 
-				if i%self.batch_size == self.batch_size -1:
-					yield(self.X, self.Y)
-
-	''
-	#### --- Image aug--
-
-	#max_abs_angle_deg: maximum angle of rotation. positive scalar
-	def add_rotate(self, max_abs_angle_deg = 10):
-		self.aug_method.append(self.__rotate)
-		self.aug_args.append(max_abs_angle_deg)
-	
-	#min: the lowest value 
-	#max: the highest value
-	#[min, max] shuld be in the range [0.3, 3], (isj)
-	def add_gamma_transform(self, min, max):
-		self.aug_method.append(self.__gamma_transfrom)
-		self.aug_args.append([min, max])
-
-	#max_shift: max normalized shift relative to the image shape. range [0,1]
-	def add_shift(self, max_shift):
-		self.aug_method.append(self.__shift)
-		self.aug_args.append(max_shift)
-	
-	#flips image
-	def add_flip(self):
-		self.aug_method.append(self.__flip)
-		self.aug_args.append(None)
-
-	#zooms image in the range zoom_range
-	def add_zoom(self, zoom_range):
-		self.aug_method.append(self.__zoom)
-		self.aug_args.append(zoom_range)		
-
-	#-----
-	def __gamma_transfrom(self, args):
-		gamma = np.random.uniform(args[0], args[1])
-		self.image = np.clip(np.power(self.image, gamma), 0, 1)
-
-	def __rotate(self, max_angle):	
-		angle = 2 * max_angle * np.random.rand() - max_angle 
-		self.image =  ndimage.rotate(self.image, angle, reshape = False, order = 1)
-		self.image = np.clip(self.image, 0, 1)
-	
-	def __shift(self, max_shift):
-		shift_x = np.random.uniform(-self.image.shape[0], self.image.shape[0]) * max_shift
-		shift_y = np.random.uniform(-self.image.shape[1], self.image.shape[1]) * max_shift
-		self.image = ndimage.shift(self.image, (shift_x, shift_y, 0), order = 1)
-		self.image = np.clip(self.image, 0, 1)
-
-	def __flip(self):
-		if np.random.rand() > 0.5:
-			self.image = np.flip(self.image, axis = 1)
-			self.image = np.clip(self.image, 0, 1)
-
-	def __zoom(self, args):
-		if np.random.rand() > 0.5:
-			zoom_range_x = args[0] + (np.random.rand() * (args[1]- args[0]))
-			zoom_range_y = 1
-		else:
-			zoom_range_x = 1
-			zoom_range_y = args[0] + (np.random.rand() * (args[1]- args[0]))
-
-		self.image = ndimage.zoom(self.image, (zoom_range_x, zoom_range_y, 1), order = 1)
 
 
-	
+    def __im_reshape(self, orig_shape, image):
+        factor_x = self.X_shape[0] / orig_shape[0]
+        factor_y = self.X_shape[1] / orig_shape[1]
+        return ndimage.zoom(image, (factor_x, factor_y, 1), order=1)
 
-	######## ---- utils ---
+    def get_classes(self):
+        if self.class_list:
+            return slef.class_list
+        else:
+            class_list = []
+            for folder in os.listdir(self.path):
+                class_list.append(folder)
+            return class_list
 
-	def __im_reshape(self, orig_shape, image):
-		
-		factor_x = self.X_shape[1] / orig_shape[0]
-		factor_y = self.X_shape[2] / orig_shape[1]
 
-		return ndimage.zoom(image, (factor_x, factor_y, 1), order = 1)
+if __name__ == "__main__":
+    new_model_name = 'model_test_1.h5'
+    save_model_path = 'C:\\Github\\ResQ\\ResQ-Biometrics-CNN\\Models\\'
 
+    # avoid saving over existing model
+    if new_model_name in os.listdir(save_model_path):
+        print('Model name exists. Change the model name')
+        exit()
+
+    # consts
+    N_channels = 3
+    N_images_per_class = 2000
+    image_shape = (80, 80)
+    N_classes = 7
+    X_shape = (image_shape[0], image_shape[1], N_channels)
+    val_size = 0.3
+
+    data_class = GetDataset('C:\\Users\\Eier\\Desktop\\ResQ Dataset\\ExpW\\train',
+                            X_shape,
+                            N_classes,
+                            N_channels,
+                            N_images_per_class=N_images_per_class,
+                            )
+
+    early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
+                                               min_delta=0,
+                                               patience=10,
+                                               verbose=0,
+                                               mode='auto',
+                                               baseline=None,
+                                               restore_best_weights=True)
+
+    X, Y = data_class.flow_from_dir()
+
+    m = SecModel(N_classes)
+    model = m.random_CNN(input_shape=(
+        image_shape[0], image_shape[1], N_channels))
+
+    model.compile(loss='categorical_crossentropy',
+                  optimizer='adam',
+                  metrics=['acc'])
+
+    tensorboard_name = datetime.now().strftime("%Y%m%d-%H%M%S")
+    tensorboard = keras.callbacks.TensorBoard(
+        log_dir='C:\\Github\\ResQ\\ResQ-Biometrics-CNN\\Models\\Tensorboard\\' + tensorboard_name,
+        histogram_freq=1,
+        write_graph=True,
+        write_grads=True,
+        write_images=True,
+        embeddings_freq=0,
+        embeddings_layer_names=None,
+        embeddings_metadata=None,
+        embeddings_data=None,
+        update_freq='epoch')
+
+    save_best = keras.callbacks.ModelCheckpoint(save_model_path + new_model_name,
+                                                monitor='val_loss',
+                                                verbose=1,
+                                                save_best_only=True,
+                                                save_weights_only=False,
+                                                mode='min',
+                                                period=1)
+
+    callback = [tensorboard, save_best, early_stop]
+    log = model.fit(x=X, y=Y, epochs=1000, verbose=1, batch_size=64, callbacks=callback, validation_split=0.3,
+                    shuffle=True)

@@ -6,8 +6,9 @@ import matplotlib.pyplot as plt
 
 from class_model import SecModel
 from class_generator import Generator
+from class_getDataset import GetDataset
 from class_utils import get_vgg16_from_keras, get_vgg_w_imnet, add_classes_to_model, meta_data
-
+from keras.preprocessing.image import ImageDataGenerator
 import keras
 from keras.models import load_model
 import h5py
@@ -16,7 +17,7 @@ import os
 
 ## paths
 train_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\ExpW\\train'
-new_model_name = 'model_expw_preTr_vgg16_1.h5'
+new_model_name = 'model_expw_preTr_vgg16_2_cont3.h5'
 save_model_path = 'Models\\'
 
 if new_model_name in os.listdir(save_model_path):
@@ -27,26 +28,23 @@ if new_model_name in os.listdir(save_model_path):
 ## consts
 N_channels = 3
 N_images_per_class = 2000
-batch_size = 64
 image_shape = (100, 100)
 N_classes = 7
-X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
-Y_shape = (batch_size, N_classes)
+X_shape = (image_shape[0], image_shape[1], N_channels)
 val_size = 0.3
+batch_size = 64
 
 
-### generator
-gen_train = Generator(train_path, X_shape, Y_shape, N_classes, N_channels, batch_size, train_val_split=val_size, N_images_per_class=N_images_per_class)
-#gen_train.add_rotate(max_abs_angle_deg=20)
-#gen_train.add_gamma_transform(0.5,1.5)
-#gen_train.add_flip()
-#gen_train.add_shift(0.1)
-#gen_train.add_zoom(zoom_range= [0.2,2])
+data_class = GetDataset(train_path, X_shape, N_classes, N_channels, N_images_per_class=N_images_per_class)
+data_class.get_classes()
+X, y = data_class.flow_from_dir()
 
-train_gen = gen_train.flow_from_dir(set = 'train')
-val_gen = gen_train.flow_from_dir(set = 'val', augment_validation = True)
+X_train = X[0:int(np.shape(X)[0] *(1-val_size))]
+X_val = X[0:int(np.shape(X)[0] *val_size)]
+y_train = y[0:int(np.shape(X)[0] *(1-val_size))]
+y_val = y[0:int(np.shape(X)[0] *val_size)]
 
-
+data_gen = ImageDataGenerator(rotation_range=20, width_shift_range=0.2, height_shift_range=0.2, horizontal_flip=True)
 
 ### -- get new model
 #m = SecModel(N_classes)
@@ -54,7 +52,7 @@ val_gen = gen_train.flow_from_dir(set = 'val', augment_validation = True)
 #model.summary()
 
 ### -- vgg16 + empty
-model = get_vgg_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes)
+#model = get_vgg_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes)
 
 ### -- fresh vgg
 #model = get_vgg16_from_keras((image_shape[0], image_shape[1], N_channels), N_classes)
@@ -63,10 +61,13 @@ model = get_vgg_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes)
 #exit()
 
 ### --- load model
-#model = load_model('Models\\model_expw_2.h5')
+model = load_model('Models\\model_expw_preTr_vgg16_2_cont2.h5')
 
 ## use pretrained model
 #model = add_classes_to_model('Models\\model_9.h5', 3, 10)
+
+
+model.summary()
 
 ## callbacks
 early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
@@ -107,29 +108,26 @@ model.compile(loss='categorical_crossentropy',
           optimizer='adam',
          metrics=['acc'])
 
-steps_per_epoch = np.floor(gen_train.get_length_data()*(1-val_size)) / batch_size 
-val_setps_per_epoch = np.floor(gen_train.get_length_data() * val_size) / batch_size 
 
-history = model.fit_generator(train_gen,
-                    validation_data = val_gen,
-                    steps_per_epoch = steps_per_epoch, 
-                    validation_steps = val_setps_per_epoch,
-                    epochs = 30,
+#history = model.fit(x=X, y=y, batch_size=batch_size, epochs=200, verbose=1, callbacks=callback, validation_split=val_size, validation_data=None, shuffle=False, class_weight=None, sample_weight=None, initial_epoch=0, steps_per_epoch=None, validation_steps=None, validation_freq=1, max_queue_size=10, workers=1, use_multiprocessing=False)
+history = model.fit_generator(data_gen.flow(X_train, y=y_train, batch_size=64, shuffle=False), 
+                    validation_data = data_gen.flow(X_val, y=y_val, batch_size=64, shuffle=False),
+                    steps_per_epoch = np.shape(X_train)[0] / batch_size, 
+                    validation_steps = np.shape(X_val)[0] / batch_size,
+                    epochs = 90,
                     callbacks = callback,
-                    use_multiprocessing = False)
-
+                    use_multiprocessing = False)                               
 
 meta_data_dict = {'model_name' : new_model_name,
-                'train_size' : steps_per_epoch*batch_size,
-                'val_size' : val_setps_per_epoch*batch_size,
+                'train_size' : N_images_per_class*N_classes*(1-val_size),
+                'val_size' : N_images_per_class*N_classes*(val_size),
                 'batch_size' : batch_size,
                 'train_path' : train_path,
-                'model_classes': gen_train.get_classes(),
-                'model_augmentations' : gen_train.get_aug(),
+                'model_classes': data_class.get_classes(),
                 'Images per class' : N_images_per_class,
                 'model_input_shape' : X_shape,
                 'N_epochs' : len(history.history['val_loss']),
                 'best val loss' : min(history.history['val_loss']),
-                'model_used' : 'random CNN'
+                'model_used' : 'vgg16 with imageNet'
 }
 meta_data(new_model_name, meta_data_dict)

@@ -117,8 +117,8 @@ class VisualizeLayers:
                 input_img_data += grads_value * self.step
 
                 # some filters get stuck to 0, we can skip them
-                #if loss_value <= K.epsilon():
-                #    return None
+                if loss_value <= K.epsilon():
+                    return None
 
             # Calculate upscaled dimension
             intermediate_dim = tuple(
@@ -199,7 +199,7 @@ if __name__ == '__main__':
     model.summary()
 
 
-    VL = VisualizeLayers(model, step=1, epochs=10)#, output_dim=(200, 200), upscaling_steps=5, )
+    VL = VisualizeLayers(model)
     VL.visualize_layer(LAYER_NAME)
     images = VL.get_filters()
     for i in images:

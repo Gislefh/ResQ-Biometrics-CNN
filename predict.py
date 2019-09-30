@@ -11,28 +11,28 @@ import matplotlib.pyplot as plt
 
 ### consts
 train_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\face-expression-recognition-dataset\\images\\train'
-test_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\face-expression-recognition-dataset\\images\\validation'
+test_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\ExpW\\validation'
 
-N_channels = 1
+N_channels = 3
 batch_size = 16
-model_shape_shape = (80, 80)
-N_classes = 3
+model_shape_shape = (100, 100)
+N_classes = 7
 X_shape = (batch_size, model_shape_shape[0], model_shape_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
 
 ## create ganerator
-gen_test = Generator(test_path, X_shape, Y_shape, N_classes, N_channels, batch_size, N_images_per_class=None, class_list = ['angry', 'happy', 'neutral'])
+gen_test = Generator(test_path, X_shape, Y_shape, N_classes, N_channels, batch_size, N_images_per_class=500)#, class_list = ['angry', 'happy', 'neutral'])
 N_data = gen_test.get_length_data()
 test_gen = gen_test.flow_from_dir(set = 'test')
 
 labels = gen_test.get_classes()
 
-model = load_model("Models\\model_test_tensorboard_2.h5")
+model = load_model("Models\\model_expw_preTr_vgg16_2_cont3.h5")
 P = Predict(model, labels = labels)
 
 
-P.pred_from_cam()
-#P.conf_matrix(test_gen, N_data)
+#P.pred_from_cam()
+P.conf_matrix(test_gen, N_data)
 exit()
 
 

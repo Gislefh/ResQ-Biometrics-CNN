@@ -34,7 +34,7 @@ def get_vgg16_from_keras(input_shape, N_classes):
 	model = keras.applications.vgg16.VGG16(include_top=inc_top, weights= None, input_tensor=None, input_shape=inp_shape, pooling=None, classes=N_classes)
 	return model
 
-def get_vgg_w_imnet(input_shape, N_classes):
+def get_vgg_w_imnet(input_shape, N_classes, show_trainability = True):
 
 	init_model = keras.applications.vgg16.VGG16(include_top=False, weights='imagenet', input_shape=input_shape, pooling='max', classes=None)
 
@@ -47,10 +47,11 @@ def get_vgg_w_imnet(input_shape, N_classes):
 	
 
 	## freeze all but the last 14 layers. last 6 conv2d and the dense layers
-	for layer in model.layers[:-15]:
+	for layer in model.layers[:-11]:
 		layer.trainable = False
-
-
+	print('Showing which layers are trainable:')
+	for i, layer in enumerate(model.layers):
+		print('layer nr:', i, ', name:', layer.name, ', trainable:', layer.trainable)
 	return model
 
 
