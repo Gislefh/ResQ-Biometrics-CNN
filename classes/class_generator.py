@@ -11,6 +11,7 @@ import dlib
 import csv
 import requests
 
+from random import shuffle
 #sys.path.insert(0, "C:\\Users\\47450\\Documents\\ResQ Biometrics\\ResQ-Biometrics-Model-1\\classes")
 #from class_faceDetection import FaceDetection
 
@@ -133,14 +134,19 @@ class Generator:
 		else:
 			print("select either: 'train', 'val' or 'test'")
 			exit()
+		
+		choise_list = list(range(len(tot_list)))
+		
 
 		while True:
 
 			image_list = tot_list.copy()
+			shuffle(choise_list)
 
 			for i in range(len(image_list)):
 				##choose random image from list
-				choice = np.random.choice(len(image_list[:, 0]))
+				#choice = np.random.choice(len(image_list[:, 0]))
+				choice = choise_list[i]
 				orig_ch = cv2.imread( image_list[choice, 0]).shape[-1]
 				label = int(image_list[choice, 1])
 
@@ -175,8 +181,8 @@ class Generator:
 				else:
 					self.Y[i%self.batch_size] = one_hot(label, self.N_classes)
 
-				# delete this entry from the list
-				image_list = np.delete(image_list, choice, 0)
+				# delete this entry from the list - nope not anymore
+				#image_list = np.delete(image_list, choice, 0)
 
 
 				if i%self.batch_size == self.batch_size -1:

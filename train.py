@@ -16,11 +16,12 @@ import os
 
 ## paths
 train_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\face-expression-recognition-dataset\\images\\train'
-new_model_name = 'model_test_viz6.h5'
+new_model_name = 'model_test_viz7.h5'
 save_model_path = 'Models\\'
 
 if new_model_name in os.listdir(save_model_path):
     print('Model name exists. Change the model name')
+    exit()
 
 
 ## consts
