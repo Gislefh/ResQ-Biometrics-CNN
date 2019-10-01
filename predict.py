@@ -30,16 +30,18 @@ labels = gen_test.get_classes()
 model = load_model("Models\\model_expw_preTr_vgg16_2_cont3.h5")
 P = Predict(model, labels = labels)
 
+print(model.metrics_names)
+print(model.evaluate_generator(test_gen, steps=N_data/batch_size, callbacks=None, max_queue_size=10, workers=1, use_multiprocessing=False, verbose=1))
+
 
 #P.pred_from_cam()
-P.conf_matrix(test_gen, N_data)
+#P.conf_matrix(test_gen, N_data)
 exit()
 
 
 
 
-cnt_tot = 0
-cnt_correct = 0
+
 for x,y in test_gen:
     for i in range(x.shape[-1]):
         

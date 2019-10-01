@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from class_model import SecModel
 from class_generator import Generator
 from class_getDataset import GetDataset
+from class_customCallback import CustomCallback
 from class_utils import get_vgg16_from_keras, get_vgg_w_imnet, add_classes_to_model, meta_data
 from keras.preprocessing.image import ImageDataGenerator
 import keras
@@ -17,7 +18,8 @@ import os
 
 ## paths
 train_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\ExpW\\train'
-new_model_name = 'model_expw_preTr_vgg16_2_cont3.h5'
+
+new_model_name = 'model_expw_preTr_vgg16_4.h5'
 save_model_path = 'Models\\'
 
 if new_model_name in os.listdir(save_model_path):
@@ -27,8 +29,8 @@ if new_model_name in os.listdir(save_model_path):
 
 ## consts
 N_channels = 3
-N_images_per_class = 2000
-image_shape = (100, 100)
+N_images_per_class = 3000
+image_shape = (200, 200)
 N_classes = 7
 X_shape = (image_shape[0], image_shape[1], N_channels)
 val_size = 0.3
@@ -40,19 +42,20 @@ data_class.get_classes()
 X, y = data_class.flow_from_dir()
 
 X_train = X[0:int(np.shape(X)[0] *(1-val_size))]
-X_val = X[0:int(np.shape(X)[0] *val_size)]
+X_val = X[int(np.shape(X)[0] *(1-val_size)):-1]
 y_train = y[0:int(np.shape(X)[0] *(1-val_size))]
-y_val = y[0:int(np.shape(X)[0] *val_size)]
+y_val = y[int(np.shape(X)[0] *(1-val_size)):-1]
 
-data_gen = ImageDataGenerator(rotation_range=20, width_shift_range=0.2, height_shift_range=0.2, horizontal_flip=True)
+data_gen_train = ImageDataGenerator(rotation_range=30, width_shift_range=0.1, height_shift_range=0.1, horizontal_flip=True, zoom_range=0.1)
+data_gen_val = ImageDataGenerator(rotation_range=30, width_shift_range=0.1, height_shift_range=0.1, horizontal_flip=True, zoom_range=0.1)
 
 ### -- get new model
 #m = SecModel(N_classes)
 #model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], N_channels))
 #model.summary()
 
-### -- vgg16 + empty
-#model = get_vgg_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes)
+### -- vgg16 w imagenet + empty dense layers
+model = get_vgg_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes)
 
 ### -- fresh vgg
 #model = get_vgg16_from_keras((image_shape[0], image_shape[1], N_channels), N_classes)
@@ -61,7 +64,7 @@ data_gen = ImageDataGenerator(rotation_range=20, width_shift_range=0.2, height_s
 #exit()
 
 ### --- load model
-model = load_model('Models\\model_expw_preTr_vgg16_2_cont2.h5')
+#model = load_model('Models\\model_expw_preTr_vgg16_2_cont2.h5')
 
 ## use pretrained model
 #model = add_classes_to_model('Models\\model_9.h5', 3, 10)
@@ -86,9 +89,9 @@ save_best = keras.callbacks.ModelCheckpoint(save_model_path + new_model_name,
                                 mode='min', 
                                 period=1)
 
-## --save as date--
-tensorboard_name = datetime.now().strftime("%Y%m%d-%H%M%S")
 
+#tensorboard_name = datetime.now().strftime("%Y%m%d-%H%M%S")
+tensorboard_name = new_model_name.split('.')[0]
 tensorboard = keras.callbacks.TensorBoard(log_dir='C:\\Users\\47450\\Documents\\ResQ Biometrics\\ResQ-Biometrics-CNN\\Models\\Tensorboard\\' + tensorboard_name, 
                                             histogram_freq=0, 
                                             batch_size=batch_size, 
@@ -101,6 +104,7 @@ tensorboard = keras.callbacks.TensorBoard(log_dir='C:\\Users\\47450\\Documents\\
                                             embeddings_data=None, 
                                             update_freq='epoch')
 
+
 callback = [tensorboard, save_best]
 
 
@@ -109,12 +113,11 @@ model.compile(loss='categorical_crossentropy',
          metrics=['acc'])
 
 
-#history = model.fit(x=X, y=y, batch_size=batch_size, epochs=200, verbose=1, callbacks=callback, validation_split=val_size, validation_data=None, shuffle=False, class_weight=None, sample_weight=None, initial_epoch=0, steps_per_epoch=None, validation_steps=None, validation_freq=1, max_queue_size=10, workers=1, use_multiprocessing=False)
-history = model.fit_generator(data_gen.flow(X_train, y=y_train, batch_size=64, shuffle=False), 
-                    validation_data = data_gen.flow(X_val, y=y_val, batch_size=64, shuffle=False),
+history = model.fit_generator(data_gen_train.flow(X_train, y=y_train, batch_size=batch_size, shuffle=False), 
+                    validation_data = data_gen_val.flow(X_val, y=y_val, batch_size=batch_size, shuffle=False),
                     steps_per_epoch = np.shape(X_train)[0] / batch_size, 
                     validation_steps = np.shape(X_val)[0] / batch_size,
-                    epochs = 90,
+                    epochs = 100,
                     callbacks = callback,
                     use_multiprocessing = False)                               
 

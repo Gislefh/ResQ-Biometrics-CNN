@@ -25,8 +25,8 @@ class Predict:
 
 
     #  -- Prints the confution matrix -- 
-    # left - graound truth 
-    # top - what it guessed
+    # left - the pred 
+    # top - ground truth
     def conf_matrix(self, generator, N_images, append_labels = True):
         conf_matrix = np.zeros((len(self.labels), len(self.labels)))
         cnt = 0
