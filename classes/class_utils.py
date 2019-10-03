@@ -55,6 +55,26 @@ def get_vgg_w_imnet(input_shape, N_classes, show_trainability = True):
 	return model
 
 
+def get_inception_w_imnet(input_shape, N_classes, show_trainability=True):
+	init_model = keras.applications.inception_v3.InceptionV3(include_top=False, weights='imagenet', input_shape=input_shape,
+												pooling='max', classes=None)
+
+	x = Dense(255, activation='relu')(init_model.output)
+	x = Dropout(0.1)(x)
+	x = Dense(255, activation='relu')(x)
+	x = Dropout(0.1)(x)
+	preds = Dense(N_classes, activation='softmax')(x)
+	model = Model(init_model.input, preds)
+
+	## freeze all but the last 14 layers. last 6 conv2d and the dense layers
+	for layer in model.layers[:-88]:
+		layer.trainable = False
+	print('Showing which layers are trainable:')
+	for i, layer in enumerate(model.layers):
+		print('layer nr:', i, ', name:', layer.name, ', trainable:', layer.trainable)
+	return model
+
+
 def add_classes_to_model(model_path, N_classes, freeze_N_layers = None):
 	
 	

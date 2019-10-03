@@ -6,9 +6,10 @@ import cv2
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from scipy import ndimage
-from class_utils import one_hot
+from class_utils import one_hot, get_inception_w_imnet
 from class_model import SecModel
 from random import shuffle
+
 
 from pytictoc import TicToc
 import csv
@@ -158,7 +159,7 @@ class GetDataset:
 
 
 if __name__ == "__main__":
-    new_model_name = 'model_test_1.h5'
+    new_model_name = 'model_test_8.h5'
     save_model_path = 'C:\\Github\\ResQ\\ResQ-Biometrics-CNN\\Models\\'
 
     # avoid saving over existing model
@@ -191,10 +192,10 @@ if __name__ == "__main__":
 
     X, Y = data_class.flow_from_dir()
 
-    m = SecModel(N_classes)
-    model = m.random_CNN(input_shape=(
-        image_shape[0], image_shape[1], N_channels))
-
+    #m = SecModel(N_classes)
+    #model = m.random_CNN(input_shape=(image_shape[0], image_shape[1], N_channels))
+    model = get_inception_w_imnet(input_shape=(image_shape[0], image_shape[1], N_channels), N_classes=N_classes)
+    model.summary()
     model.compile(loss='categorical_crossentropy',
                   optimizer='adam',
                   metrics=['acc'])
