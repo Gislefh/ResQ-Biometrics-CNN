@@ -20,7 +20,6 @@ class GetDataset:
                  N_images_per_class=None):
 
         self.path = path  # path to folder, str
-<<<<<<< Updated upstream
         # shape of output, ( width, height, channel) or (width, height, channels)
         self.X_shape = X_shape
         # self.Y_shape = Y_shape  # shape of ground truth, (samples, classes) for classification
@@ -28,13 +27,6 @@ class GetDataset:
         # number of channels in the images, 1 is gray, 3 is color
         self.N_channels = N_channels
         # self.batch_size = batch_size    #number of samples in a batch
-=======
-        self.X_shape = X_shape  # shape of output, ( width, height, channel) or (width, height, channels)
-        # self.Y_shape = Y_shape  # shape of ground truth, (samples, classes) for classification
-        self.N_classes = N_classes  # number of classes, int
-        self.N_channels = N_channels  # number of channels in the images, 1 is gray, 3 is color
-        # self.batch_size = batch_size	#number of samples in a batch
->>>>>>> Stashed changes
         self.image = None
         self.aug_method = []
         self.aug_args = []
@@ -60,25 +52,16 @@ class GetDataset:
                 if folder not in self.class_list:
                     continue
 
-<<<<<<< Updated upstream
             # saving N_val first images as validation
             if N_images_per_class != None:
                 N_val = int(N_images_per_class * self.train_val_split)
             else:
                 N_val = int(len(os.listdir(self.path + '/' + folder))
                             * self.train_val_split)
-=======
-            ## saving N_val first images as validation
-            if N_images_per_class != None:
-                N_val = int(N_images_per_class * self.train_val_split)
-            else:
-                N_val = int(len(os.listdir(self.path + '/' + folder)) * self.train_val_split)
->>>>>>> Stashed changes
 
             for image_ in os.listdir(self.path + '/' + folder):
                 if N_images_per_class != None:
                     if cnt_img_per_class > N_images_per_class:
-<<<<<<< Updated upstream
                         break  # TODO fix
 
                 if cnt_img_per_class <= N_val:
@@ -87,14 +70,6 @@ class GetDataset:
                 else:
                     tmp_train_set.append(
                         [self.path + '/' + folder + '/' + image_, class_])
-=======
-                        break  ##TODO fix
-
-                if cnt_img_per_class <= N_val:
-                    tmp_val_set.append([self.path + '/' + folder + '/' + image_, class_])
-                else:
-                    tmp_train_set.append([self.path + '/' + folder + '/' + image_, class_])
->>>>>>> Stashed changes
                 cnt_img_per_class += 1
 
             class_ += 1
@@ -115,12 +90,8 @@ class GetDataset:
 
         self.__from_dir(self.N_images_per_class)
 
-<<<<<<< Updated upstream
         self.X = np.zeros(
             (len(self.train_set), self.X_shape[0], self.X_shape[1], self.X_shape[2]), np.float32)
-=======
-        self.X = np.zeros((len(self.train_set), self.X_shape[0], self.X_shape[1], self.X_shape[2]), np.float32)
->>>>>>> Stashed changes
         self.Y = np.zeros((len(self.train_set), self.N_classes), np.int8)
 
         if set == 'train':
@@ -133,10 +104,6 @@ class GetDataset:
             print("select either: 'train', 'val' or 'test'")
             exit()
 
-<<<<<<< Updated upstream
-=======
-
->>>>>>> Stashed changes
         index_of_element = list(range(len(tot_list)))
         shuffle(index_of_element)
 
@@ -149,17 +116,11 @@ class GetDataset:
 
             if (orig_ch == 3) and (self.N_channels == 1):
                 im_tmp = cv2.imread(tot_list[choice, 0])
-<<<<<<< Updated upstream
                 self.image = np.expand_dims(cv2.cvtColor(
                     im_tmp, cv2.COLOR_BGR2GRAY), axis=-1)
             else:
                 self.image = cv2.imread(tot_list[choice, 0])[
                     :, :, 0:self.N_channels]
-=======
-                self.image = np.expand_dims(cv2.cvtColor(im_tmp, cv2.COLOR_BGR2GRAY), axis=-1)
-            else:
-                self.image = cv2.imread(tot_list[choice, 0])[:, :, 0:self.N_channels]
->>>>>>> Stashed changes
 
                 # BGR to RGB
                 if '.jpg' in tot_list[choice, 0]:
@@ -171,21 +132,13 @@ class GetDataset:
             # normalize image to [0,1]
             self.image = np.clip(self.image / 255, 0, 1)
 
-<<<<<<< Updated upstream
             # reshape image
-=======
-            ## reshape image
->>>>>>> Stashed changes
             if self.image.shape != self.X[0].shape:
                 self.X[i] = self.__im_reshape(self.image.shape, self.image)
             else:
                 self.X[i] = self.image
 
-<<<<<<< Updated upstream
             # one hot encode ground truth
-=======
-            ## one hot encode ground truth
->>>>>>> Stashed changes
             if self.class_list:
                 self.Y[i] = one_hot(label, len(self.class_list))
             else:
@@ -193,7 +146,6 @@ class GetDataset:
 
         return self.X, self.Y
 
-<<<<<<< Updated upstream
 
 
 
@@ -210,31 +162,18 @@ class GetDataset:
             for folder in os.listdir(self.path):
                 class_list.append(folder)
             return class_list
-=======
-    ######## ---- utils ---
-    def __im_reshape(self, orig_shape, image):
-
-        factor_x = self.X_shape[0] / orig_shape[0]
-        factor_y = self.X_shape[1] / orig_shape[1]
-
-        return ndimage.zoom(image, (factor_x, factor_y, 1), order=1)
->>>>>>> Stashed changes
 
 
 if __name__ == "__main__":
     new_model_name = 'model_test_1.h5'
     save_model_path = 'C:\\Github\\ResQ\\ResQ-Biometrics-CNN\\Models\\'
 
-<<<<<<< Updated upstream
     # avoid saving over existing model
     if new_model_name in os.listdir(save_model_path):
         print('Model name exists. Change the model name')
         exit()
 
     # consts
-=======
-    ## consts
->>>>>>> Stashed changes
     N_channels = 3
     N_images_per_class = 2000
     image_shape = (80, 80)
@@ -248,10 +187,6 @@ if __name__ == "__main__":
                             N_channels,
                             N_images_per_class=N_images_per_class,
                             )
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
     early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
                                                min_delta=0,
                                                patience=10,
@@ -263,12 +198,8 @@ if __name__ == "__main__":
     X, Y = data_class.flow_from_dir()
 
     m = SecModel(N_classes)
-<<<<<<< Updated upstream
     model = m.random_CNN(input_shape=(
         image_shape[0], image_shape[1], N_channels))
-=======
-    model = m.random_CNN(input_shape=(image_shape[0], image_shape[1], N_channels))
->>>>>>> Stashed changes
 
     model.compile(loss='categorical_crossentropy',
                   optimizer='adam',
