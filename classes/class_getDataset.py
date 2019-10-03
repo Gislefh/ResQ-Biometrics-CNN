@@ -123,6 +123,13 @@ class GetDataset:
                 self.image = cv2.imread(tot_list[choice, 0])[
                     :, :, 0:self.N_channels]
 
+                # BGR to RGB
+                if '.jpg' in tot_list[choice, 0]:
+                    self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
+
+
+            
+
             # normalize image to [0,1]
             self.image = np.clip(self.image / 255, 0, 1)
 
@@ -181,7 +188,6 @@ if __name__ == "__main__":
                             N_channels,
                             N_images_per_class=N_images_per_class,
                             )
-
     early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
                                                min_delta=0,
                                                patience=10,

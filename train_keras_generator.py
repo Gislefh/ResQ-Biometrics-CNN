@@ -19,7 +19,7 @@ import os
 ## paths
 train_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\ExpW\\train'
 
-new_model_name = 'model_expw_preTr_vgg16_4.h5'
+new_model_name = 'model_expw_preTr_vgg16_5.h5'
 save_model_path = 'Models\\'
 
 if new_model_name in os.listdir(save_model_path):
@@ -30,7 +30,7 @@ if new_model_name in os.listdir(save_model_path):
 ## consts
 N_channels = 3
 N_images_per_class = 3000
-image_shape = (200, 200)
+image_shape = (150, 150)
 N_classes = 7
 X_shape = (image_shape[0], image_shape[1], N_channels)
 val_size = 0.3
@@ -46,8 +46,8 @@ X_val = X[int(np.shape(X)[0] *(1-val_size)):-1]
 y_train = y[0:int(np.shape(X)[0] *(1-val_size))]
 y_val = y[int(np.shape(X)[0] *(1-val_size)):-1]
 
-data_gen_train = ImageDataGenerator(rotation_range=30, width_shift_range=0.1, height_shift_range=0.1, horizontal_flip=True, zoom_range=0.1)
-data_gen_val = ImageDataGenerator(rotation_range=30, width_shift_range=0.1, height_shift_range=0.1, horizontal_flip=True, zoom_range=0.1)
+data_gen_train = ImageDataGenerator(rotation_range=30, width_shift_range=0.2, height_shift_range=0.2, horizontal_flip=True, zoom_range=0.2, fill_mode='constant')
+data_gen_val = ImageDataGenerator(rotation_range=30, width_shift_range=0.2, height_shift_range=0.2, horizontal_flip=True, zoom_range=0.2)
 
 ### -- get new model
 #m = SecModel(N_classes)
@@ -68,7 +68,6 @@ model = get_vgg_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes)
 
 ## use pretrained model
 #model = add_classes_to_model('Models\\model_9.h5', 3, 10)
-
 
 model.summary()
 
@@ -117,7 +116,7 @@ history = model.fit_generator(data_gen_train.flow(X_train, y=y_train, batch_size
                     validation_data = data_gen_val.flow(X_val, y=y_val, batch_size=batch_size, shuffle=False),
                     steps_per_epoch = np.shape(X_train)[0] / batch_size, 
                     validation_steps = np.shape(X_val)[0] / batch_size,
-                    epochs = 100,
+                    epochs = 200,
                     callbacks = callback,
                     use_multiprocessing = False)                               
 

@@ -47,8 +47,9 @@ def get_vgg_w_imnet(input_shape, N_classes, show_trainability = True):
 	
 
 	## freeze all but the last 14 layers. last 6 conv2d and the dense layers
-	for layer in model.layers[:-11]:
+	for layer in model.layers[:-14]:
 		layer.trainable = False
+
 	print('Showing which layers are trainable:')
 	for i, layer in enumerate(model.layers):
 		print('layer nr:', i, ', name:', layer.name, ', trainable:', layer.trainable)
