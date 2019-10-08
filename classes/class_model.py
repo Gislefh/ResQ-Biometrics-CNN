@@ -86,44 +86,32 @@ class SecModel:
     def random_CNN(self, input_shape):
         M = Sequential()
         M.add(Conv2D(32, (3, 3), activation='relu', input_shape=input_shape))
+        M.add(Conv2D(32, (3, 3), activation='relu'))
+        M.add(Conv2D(32, (3, 3), activation='relu'))
         M.add(MaxPooling2D(pool_size=(2, 2)))
+        M.add(Dropout(0.1))
 
         M.add(Conv2D(64, (3, 3), activation='relu'))
+        M.add(Conv2D(64, (3, 3), activation='relu'))
+        M.add(Conv2D(64, (3, 3), activation='relu'))
         M.add(MaxPooling2D(pool_size=(2, 2)))
-
         M.add(Dropout(0.1))
 
         M.add(Conv2D(128, (3, 3), activation='relu'))
+        M.add(Conv2D(128, (3, 3), activation='relu'))
+        M.add(Conv2D(128, (3, 3), activation='relu'))
         M.add(MaxPooling2D(pool_size=(2, 2)))
+        M.add(Dropout(0.1))
 
         M.add(Conv2D(255, (3, 3), activation='relu'))
+        M.add(Conv2D(255, (3, 3), activation='relu'))
+        M.add(Conv2D(255, (3, 3), activation='relu'))
         M.add(Dropout(0.1))
-        # M.add(MaxPooling2D(pool_size=(2, 2)))
-
-        # M.add(Conv2D(512, (3, 3), activation='relu'))
-        # M.add(GlobalMaxPooling2D())
-
-        # M.add(Conv2D(128, (3, 3), activation='relu'))
-        # M.add(Dropout(0.05))
-
-        # M.add(Conv2D(128, (3, 3), activation='relu'))
-        # M.add(Conv2D(128, (3, 3), activation='relu'))
-        # M.add(MaxPooling2D(pool_size=(2, 2)))
-        # M.add(Dropout(0.05))
-
-        # M.add(Conv2D(255, (3, 3), activation='relu'))
-        # M.add(Conv2D(255, (3, 3), activation='relu'))
-        # M.add(MaxPooling2D(pool_size=(2, 2)))
-        # M.add(Dropout(0.1))
-
-        # M.add(Conv2D(512, (3, 3), activation='relu'))
-        # M.add(Conv2D(512, (3, 3), activation='relu'))
-        # M.add(MaxPooling2D(pool_size=(2, 2)))
-        # M.add(Dropout(0.1))
-
+        
+        #M.add(GlobalMaxPooling2D())
         M.add(Flatten())
-        # M.add(Dense(255, activation='relu'))
-        # M.add(Dropout(0.1))
+        M.add(Dense(512, activation='relu'))
+        M.add(Dropout(0.1))
         M.add(Dense(512, activation='relu'))
         M.add(Dropout(0.1))
         M.add(Dense(self.N_classes, activation='softmax'))

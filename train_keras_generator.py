@@ -8,7 +8,7 @@ from class_model import SecModel
 from class_generator import Generator
 from class_getDataset import GetDataset
 from class_customCallback import CustomCallback
-from class_utils import get_vgg16_from_keras, get_vgg_w_imnet, add_classes_to_model, meta_data
+from class_utils import get_vgg16_from_keras, get_vgg_w_imnet, add_classes_to_model, meta_data, get_inception_w_imnet, plot_gen
 from keras.preprocessing.image import ImageDataGenerator
 import keras
 from keras.models import load_model
@@ -17,59 +17,64 @@ import tensorflow as tf
 import os
 
 ## paths
-train_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\ExpW\\train'
+train_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\face-expression-recognition-dataset\\images\\train'
 
-new_model_name = 'model_expw_preTr_vgg16_5.h5'
+new_model_name = 'model_ferCh_rand_cnn_10.h5'
 save_model_path = 'Models\\'
 
 if new_model_name in os.listdir(save_model_path):
+    print('-------------------')
     print('Model name exists. Change the model name')
+    print('-------------------')
     exit()
 
 
 ## consts
-N_channels = 3
-N_images_per_class = 3000
-image_shape = (150, 150)
-N_classes = 7
+N_channels = 1
+N_images_per_class = 5000
+image_shape = (100, 100)
+N_classes = 3
 X_shape = (image_shape[0], image_shape[1], N_channels)
 val_size = 0.3
 batch_size = 64
 
+## Load data
+data_class = GetDataset(train_path, X_shape, N_classes, N_channels, N_images_per_class=N_images_per_class, class_list = ['angry', 'happy', 'neutral'])
+X_train, y_train = data_class.flow_from_dir(set='train')
+X_val, y_val = data_class.flow_from_dir(set='val')
 
-data_class = GetDataset(train_path, X_shape, N_classes, N_channels, N_images_per_class=N_images_per_class)
-data_class.get_classes()
-X, y = data_class.flow_from_dir()
+## Data augmentation
+data_gen_train = ImageDataGenerator(rotation_range=30, width_shift_range=0.05, height_shift_range=0.05, horizontal_flip=True, zoom_range=0.1, shear_range=30)
+data_gen_val = ImageDataGenerator(rotation_range=30, width_shift_range=0.05, height_shift_range=0.05, horizontal_flip=True, zoom_range=0.1, shear_range=30)
 
-X_train = X[0:int(np.shape(X)[0] *(1-val_size))]
-X_val = X[int(np.shape(X)[0] *(1-val_size)):-1]
-y_train = y[0:int(np.shape(X)[0] *(1-val_size))]
-y_val = y[int(np.shape(X)[0] *(1-val_size)):-1]
+## imshow the generator
+#plot_gen(data_gen_train.flow(X_train, y=y_train, batch_size=batch_size, shuffle=False))
 
-data_gen_train = ImageDataGenerator(rotation_range=30, width_shift_range=0.2, height_shift_range=0.2, horizontal_flip=True, zoom_range=0.2, fill_mode='constant')
-data_gen_val = ImageDataGenerator(rotation_range=30, width_shift_range=0.2, height_shift_range=0.2, horizontal_flip=True, zoom_range=0.2)
+## Load model
+m = SecModel(N_classes)
+model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], N_channels))
 
-### -- get new model
-#m = SecModel(N_classes)
-#model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], N_channels))
-#model.summary()
 
-### -- vgg16 w imagenet + empty dense layers
-model = get_vgg_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes)
+#inceptionv3
+#model = get_inception_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes, show_trainability = False)
 
-### -- fresh vgg
+#vgg16 w imagenet + empty dense layers
+#model = get_vgg_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes, freeze_layers=False)
+
+#fresh vgg
 #model = get_vgg16_from_keras((image_shape[0], image_shape[1], N_channels), N_classes)
 #model.save(save_model_path + new_model_name)
 #model = keras.applications.vgg16.VGG16(include_top=False, weights= None, input_tensor=None, input_shape=(image_shape[0], image_shape[1], N_channels), pooling=None, classes=N_classes)
 #exit()
 
-### --- load model
-#model = load_model('Models\\model_expw_preTr_vgg16_2_cont2.h5')
+#load old model
+#model = load_model('Models\\model_ferCh_preTr_rand_cnn_7.h5')
 
 ## use pretrained model
 #model = add_classes_to_model('Models\\model_9.h5', 3, 10)
 
 model.summary()
+
 
 ## callbacks
 early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
@@ -108,7 +113,7 @@ callback = [tensorboard, save_best]
 
 
 model.compile(loss='categorical_crossentropy',
-          optimizer='adam',
+          optimizer='adadelta',
          metrics=['acc'])
 
 

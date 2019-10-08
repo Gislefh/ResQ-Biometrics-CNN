@@ -10,32 +10,33 @@ from class_predict import Predict
 import matplotlib.pyplot as plt
 
 ### consts
-train_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\face-expression-recognition-dataset\\images\\train'
+train_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\face-expression-recognition-dataset\\images\\validation'
 test_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\ExpW\\validation'
 
-N_channels = 3
+N_channels = 1
 batch_size = 16
 model_shape_shape = (100, 100)
-N_classes = 7
+N_classes = 3
 X_shape = (batch_size, model_shape_shape[0], model_shape_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
 
 ## create ganerator
-gen_test = Generator(test_path, X_shape, Y_shape, N_classes, N_channels, batch_size, N_images_per_class=500)#, class_list = ['angry', 'happy', 'neutral'])
+gen_test = Generator(train_path, X_shape, Y_shape, N_classes, N_channels, batch_size, N_images_per_class=None, class_list = ['angry', 'happy', 'neutral'])
 N_data = gen_test.get_length_data()
 test_gen = gen_test.flow_from_dir(set = 'test')
 
 labels = gen_test.get_classes()
 
-model = load_model("Models\\model_expw_preTr_vgg16_2_cont3.h5")
+model = load_model("Models\\model_ferCh_preTr_rand_cnn_7_cont.h5")
 P = Predict(model, labels = labels)
 
-print(model.metrics_names)
-print(model.evaluate_generator(test_gen, steps=N_data/batch_size, callbacks=None, max_queue_size=10, workers=1, use_multiprocessing=False, verbose=1))
+#print(model.metrics_names)
+#print(model.evaluate_generator(test_gen, steps=N_data/batch_size, callbacks=None, max_queue_size=10, workers=1, use_multiprocessing=False, verbose=1))
 
 
 #P.pred_from_cam()
-#P.conf_matrix(test_gen, N_data)
+#P.show_wrongly_labeled(test_gen)
+P.conf_matrix(test_gen, N_data)
 exit()
 
 

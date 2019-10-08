@@ -179,8 +179,8 @@ class VisualizeLayers:
 
 
 if __name__ == '__main__':
-    my_model = True
-    vgg_model = False
+    my_model = False
+    vgg_model = True
 
     if vgg_model:
         LAYER_NAME = 'block3_conv1'

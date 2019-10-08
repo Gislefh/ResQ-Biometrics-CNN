@@ -2,7 +2,8 @@ import numpy as np
 import keras
 from keras.models import Sequential, load_model, Model
 from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D, Input
-
+from scipy import ndimage
+import matplotlib.pyplot as plt
 """
 --- From numerical value to one hot encoded ---
 IN
@@ -21,6 +22,12 @@ def one_hot(value, N_classes):
 	one_hot[value] = 1
 	return one_hot
 
+def plot_gen(gen):
+	for x,y in gen:
+		for i in range(x.shape[0]):
+			plt.figure(str(y[i]))
+			plt.imshow(np.squeeze(x[i]))
+			plt.show()
 
 def get_vgg16_from_keras(input_shape, N_classes):
 	if input_shape == None:
@@ -34,7 +41,7 @@ def get_vgg16_from_keras(input_shape, N_classes):
 	model = keras.applications.vgg16.VGG16(include_top=inc_top, weights= None, input_tensor=None, input_shape=inp_shape, pooling=None, classes=N_classes)
 	return model
 
-def get_vgg_w_imnet(input_shape, N_classes, show_trainability = True):
+def get_vgg_w_imnet(input_shape, N_classes, show_trainability = True, freeze_layers = True):
 
 	init_model = keras.applications.vgg16.VGG16(include_top=False, weights='imagenet', input_shape=input_shape, pooling='max', classes=None)
 
@@ -45,14 +52,15 @@ def get_vgg_w_imnet(input_shape, N_classes, show_trainability = True):
 	preds = Dense(N_classes, activation='softmax')(x)
 	model = Model(init_model.input, preds)
 	
+	if freeze_layers:
+		## freeze all but the last 14 layers. last 6 conv2d and the dense layers
+		for layer in model.layers[:-14]:
+			layer.trainable = False
 
-	## freeze all but the last 14 layers. last 6 conv2d and the dense layers
-	for layer in model.layers[:-14]:
-		layer.trainable = False
+		print('Showing which layers are trainable:')
+		for i, layer in enumerate(model.layers):
+			print('layer nr:', i, ', name:', layer.name, ', trainable:', layer.trainable)
 
-	print('Showing which layers are trainable:')
-	for i, layer in enumerate(model.layers):
-		print('layer nr:', i, ', name:', layer.name, ', trainable:', layer.trainable)
 	return model
 
 
@@ -61,14 +69,14 @@ def get_inception_w_imnet(input_shape, N_classes, show_trainability=True):
 												pooling='max', classes=None)
 
 	x = Dense(255, activation='relu')(init_model.output)
-	x = Dropout(0.1)(x)
+	x = Dropout(0.3)(x)
 	x = Dense(255, activation='relu')(x)
-	x = Dropout(0.1)(x)
+	x = Dropout(0.3)(x)
 	preds = Dense(N_classes, activation='softmax')(x)
 	model = Model(init_model.input, preds)
 
-	## freeze all but the last 14 layers. last 6 conv2d and the dense layers
-	for layer in model.layers[:-88]:
+	## freeze all but the last n layers
+	for layer in model.layers[:-68]:
 		layer.trainable = False
 	print('Showing which layers are trainable:')
 	for i, layer in enumerate(model.layers):
@@ -107,3 +115,26 @@ def test_model():
 	x = Conv2D(32, (4, 4), activation='relu')(x)
 	M = Model(inputs=myInput, outputs=x)
 	return M
+
+
+class DataAug:
+
+	def __init__(self):
+		self.aug_method = []
+		
+	def get_functions(self):
+		return self.aug_method
+	
+	#min: the lowest value 
+	#max: the highest value
+	#[min, max] shuld be in the range [0.3, 3], (isj)
+	def add_gamma_transform(self, min, max):
+		self.aug_method.append(self.__gamma_transfrom)
+		self.gamma_transform_args = [min, max]
+
+
+	#-----
+	def __gamma_transfrom(self, image):
+		gamma = np.random.uniform(self.gamma_transform_args[0], self.gamma_transform_args[1])
+		return np.clip(np.power(self.image, gamma), 0, 1)
+

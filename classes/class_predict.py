@@ -46,9 +46,17 @@ class Predict:
         print(df)
         
 
-        
-
-
+    def show_wrongly_labeled(self, generator):
+        for x, y in generator:
+            for i in range(x.shape[0]):
+                pred = self.model.predict(np.expand_dims(x[i], 0))
+                pred = np.argmax(pred)
+                gt = np.argmax(y[i])
+                if gt != pred:
+                    plt.figure('label: {}, prediction: {}'.format(self.labels[gt], self.labels[pred]))
+                    plt.imshow(np.squeeze(x[i]))
+                    plt.show()
+       
     def pred_from_cam(self):
         vs = VideoStream(src=0).start()
         time.sleep(0.1)

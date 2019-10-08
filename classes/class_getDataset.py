@@ -21,13 +21,9 @@ class GetDataset:
                  N_images_per_class=None):
 
         self.path = path  # path to folder, str
-        # shape of output, ( width, height, channel) or (width, height, channels)
         self.X_shape = X_shape
-        # self.Y_shape = Y_shape  # shape of ground truth, (samples, classes) for classification
         self.N_classes = N_classes  # number of classes, int
-        # number of channels in the images, 1 is gray, 3 is color
         self.N_channels = N_channels
-        # self.batch_size = batch_size    #number of samples in a batch
         self.image = None
         self.aug_method = []
         self.aug_args = []
@@ -41,7 +37,6 @@ class GetDataset:
 
     def __from_dir(self, N_images_per_class):
 
-        image_list = []
         class_ = 0
 
         tmp_val_set = []
@@ -85,7 +80,7 @@ class GetDataset:
     train_val_split: how much of the data thats used as validaion
     '''
 
-    def flow_from_dir(self, set='train', augment_validation=True):
+    def flow_from_dir(self, set='train'):
         if set == 'test':
             self.train_val_split = 0
 
@@ -157,7 +152,7 @@ class GetDataset:
 
     def get_classes(self):
         if self.class_list:
-            return slef.class_list
+            return self.class_list
         else:
             class_list = []
             for folder in os.listdir(self.path):
