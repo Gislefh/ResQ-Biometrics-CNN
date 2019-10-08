@@ -8,7 +8,7 @@ from class_model import SecModel
 from class_generator import Generator
 from class_getDataset import GetDataset
 from class_customCallback import CustomCallback
-from class_utils import get_vgg16_from_keras, get_vgg_w_imnet, add_classes_to_model, meta_data, get_inception_w_imnet, plot_gen
+from class_utils import get_vgg16_from_keras, get_vgg_w_imnet, add_classes_to_model, meta_data, get_inception_w_imnet, plot_gen, get_denseNet_w_imnet
 from keras.preprocessing.image import ImageDataGenerator
 import keras
 from keras.models import load_model
@@ -17,10 +17,11 @@ import tensorflow as tf
 import os
 
 ## paths
-train_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\face-expression-recognition-dataset\\images\\train'
+train_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\ExpW\\train'
 
-new_model_name = 'model_ferCh_rand_cnn_10.h5'
+new_model_name = 'model_ferCh_denseNet_1.h5'
 save_model_path = 'Models\\'
+
 
 if new_model_name in os.listdir(save_model_path):
     print('-------------------')
@@ -30,7 +31,7 @@ if new_model_name in os.listdir(save_model_path):
 
 
 ## consts
-N_channels = 1
+N_channels = 3
 N_images_per_class = 5000
 image_shape = (100, 100)
 N_classes = 3
@@ -51,12 +52,15 @@ data_gen_val = ImageDataGenerator(rotation_range=30, width_shift_range=0.05, hei
 #plot_gen(data_gen_train.flow(X_train, y=y_train, batch_size=batch_size, shuffle=False))
 
 ## Load model
-m = SecModel(N_classes)
-model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], N_channels))
+#m = SecModel(N_classes)
+#model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], N_channels))
 
 
 #inceptionv3
 #model = get_inception_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes, show_trainability = False)
+
+# denseNet
+model = get_denseNet_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes)
 
 #vgg16 w imagenet + empty dense layers
 #model = get_vgg_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes, freeze_layers=False)

@@ -83,6 +83,19 @@ def get_inception_w_imnet(input_shape, N_classes, show_trainability=True):
 		print('layer nr:', i, ', name:', layer.name, ', trainable:', layer.trainable)
 	return model
 
+def get_denseNet_w_imnet(input_shape, N_classes):
+	init_model = keras.applications.densenet.DenseNet121(include_top=False, weights='imagenet', input_shape=input_shape,
+												pooling='max', classes=None)
+
+	x = Dense(255, activation='relu')(init_model.output)
+	x = Dropout(0.3)(x)
+	x = Dense(255, activation='relu')(x)
+	x = Dropout(0.3)(x)
+	preds = Dense(N_classes, activation='softmax')(x)
+	model = Model(init_model.input, preds)
+
+	return model
+
 
 def add_classes_to_model(model_path, N_classes, freeze_N_layers = None):
 	

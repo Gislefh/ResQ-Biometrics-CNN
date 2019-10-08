@@ -1,15 +1,16 @@
 import tensorflow as tf
-import keras
-from keras.models import Sequential, Model
-from keras.layers import Conv2D, ZeroPadding2D, Activation, Input, concatenate
-from keras.layers.core import Dense, Activation, Lambda, Flatten
-from keras.layers.normalization import BatchNormalization
-from keras import backend as K
-from keras.layers.pooling import MaxPooling2D, AveragePooling2D
-from keras.layers.merge import Concatenate
-
+import numpy as np
 #-------------------------------------
 def NN2_model():
+    import keras
+    from keras.models import Sequential, Model
+    from keras.layers import Conv2D, ZeroPadding2D, Activation, Input, concatenate
+    from keras.layers.core import Dense, Activation, Lambda, Flatten
+    from keras.layers.normalization import BatchNormalization
+    from keras import backend as K
+    from keras.layers.pooling import MaxPooling2D, AveragePooling2D
+    from keras.layers.merge import Concatenate
+
     myInput = Input(shape=(96, 96, 3))
 
     x = ZeroPadding2D(padding=(3, 3), input_shape=(96, 96, 3))(myInput)
@@ -193,7 +194,7 @@ def NN2_model():
 
     #return model
 
-NN2_model()
+
 
 
 
@@ -231,3 +232,101 @@ def trip_loss(e1, e2, e3, gt, delta = 0.1):
         return None
     
     return loss
+
+
+
+
+from tensorflow.keras.layers import Dense, Conv2D, Flatten, Dropout, MaxPooling2D, Input, GlobalMaxPooling2D, Embedding, Lambda, concatenate
+from tensorflow.keras.models import Sequential, Model
+from tensorflow.math import l2_normalize
+from tensorflow.compat.v2.keras.applications.inception_v3 import InceptionV3
+from scipy.spatial import distance
+
+def tensorflow_model(input_shape):
+    # input 
+    input_layer = Input(shape=input_shape)
+
+    # block 1
+    x = Conv2D(32, 3, activation='relu')(input_layer)
+    x = Conv2D(32, 3, activation='relu')(x)
+    x = Conv2D(32, 3, activation='relu')(x)
+    x = MaxPooling2D((2,2))(x)
+    x = Dropout(0.1)(x)
+
+    # block 2
+    x = Conv2D(64, 3, activation='relu')(x)
+    x = Conv2D(64, 3, activation='relu')(x)
+    x = Conv2D(64, 3, activation='relu')(x)
+    
+    # Global pooling
+    x = GlobalMaxPooling2D()(x)
+    x = Dropout(0.1)(x)
+
+    # L2 normalization
+    x = l2_normalize(x)
+
+    # Embedding
+    #x = Embedding(input_dim=x.shape, output_dim=128)
+    x = Dense(128)(x)
+
+    model = Model(inputs=input_layer, outputs=x)
+
+    return model
+
+
+def faceNet_inceptionv3_model(input_shape, embedding_size):
+    # import inceptionV3. TODO - remove last n layers to get the otput of the model to be block 4e 
+    incV3 = InceptionV3(include_top=False, weights='imagenet', input_shape=input_shape, pooling='max')
+
+    #mixed8 is the end of the inception 4e block
+    for i, layer in enumerate(incV3.layers):
+        if layer.name == 'mixed8':
+            layer_4e_index = i
+            break
+        
+
+    input_ = incV3.input
+    x = incV3.layers[layer_4e_index].output
+    out = Dense(embedding_size)(x)
+    image_embedder = Model(input_, out)
+    image_embedder.summary()
+    exit()
+
+    input_a = Input((input_shape[0], input_shape[1], input_shape[2]), name='anchor')
+    input_p = Input((input_shape[0], input_shape[1], input_shape[2]), name='positive')
+    input_n = Input((input_shape[0], input_shape[1], input_shape[2]), name='negative')
+
+    normalize = Lambda(lambda x: l2_normalize(x, axis=-1), name='normalize')
+
+    x = image_embedder(input_a)
+    output_a = normalize(x)
+    x = image_embedder(input_p)
+    output_p = normalize(x)
+    x = image_embedder(input_n)
+    output_n = normalize(x)
+
+    merged_vector = concatenate([output_a, output_p, output_n], axis=-1)
+
+    model = Model(inputs=[input_a, input_p, input_n],
+                  outputs=merged_vector)
+    return model
+
+if __name__ == "__main__":
+    embedding_size = 128
+    shape = (224, 224, 3)
+    m = faceNet_inceptionv3_model(shape,embedding_size = embedding_size)
+    m.summary()
+    shape = (1, 224, 224, 3)
+    anchor = np.random.random_sample(shape)
+    positive = np.random.random_sample(shape)
+    negative = np.random.random_sample(shape)
+
+    pred = m.predict([anchor, positive, negative])
+
+    a = pred[0, 0:embedding_size]
+    b = pred[0, embedding_size:embedding_size*2]
+    c = pred[0, embedding_size*2:]   
+
+    dst_ab = distance.euclidean(a, b)
+    dst_ac = distance.euclidean(a, c)
+    print(dst_ab, dst_ac)
