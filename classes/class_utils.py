@@ -64,23 +64,24 @@ def get_vgg_w_imnet(input_shape, N_classes, show_trainability = True, freeze_lay
 	return model
 
 
-def get_inception_w_imnet(input_shape, N_classes, show_trainability=True):
+def get_inception_w_imnet(input_shape, N_classes, show_trainability=True, freeze_layers = False):
 	init_model = keras.applications.inception_v3.InceptionV3(include_top=False, weights='imagenet', input_shape=input_shape,
 												pooling='max', classes=None)
 
-	x = Dense(255, activation='relu')(init_model.output)
-	x = Dropout(0.3)(x)
+	#x = Dense(255, activation='relu')(init_model.output)
+	#x = Dropout(0.3)(x)
 	x = Dense(255, activation='relu')(x)
 	x = Dropout(0.3)(x)
-	preds = Dense(N_classes, activation='softmax')(x)
+	preds = Dense(N_classes, activation='softmax')(init_model.output)
 	model = Model(init_model.input, preds)
 
 	## freeze all but the last n layers
-	for layer in model.layers[:-68]:
-		layer.trainable = False
-	print('Showing which layers are trainable:')
-	for i, layer in enumerate(model.layers):
-		print('layer nr:', i, ', name:', layer.name, ', trainable:', layer.trainable)
+	if freeze_layers:
+		for layer in model.layers[:-68]:
+			layer.trainable = False
+		print('Showing which layers are trainable:')
+		for i, layer in enumerate(model.layers):
+			print('layer nr:', i, ', name:', layer.name, ', trainable:', layer.trainable)
 	return model
 
 def get_denseNet_w_imnet(input_shape, N_classes):

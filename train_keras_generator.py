@@ -19,7 +19,7 @@ import os
 ## paths
 train_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\ExpW\\train'
 
-new_model_name = 'model_ferCh_denseNet_1.h5'
+new_model_name = 'model_expw_inception_4.h5'
 save_model_path = 'Models\\'
 
 
@@ -32,8 +32,8 @@ if new_model_name in os.listdir(save_model_path):
 
 ## consts
 N_channels = 3
-N_images_per_class = 5000
-image_shape = (100, 100)
+N_images_per_class = 3000
+image_shape = (150, 150)
 N_classes = 3
 X_shape = (image_shape[0], image_shape[1], N_channels)
 val_size = 0.3
@@ -57,10 +57,10 @@ data_gen_val = ImageDataGenerator(rotation_range=30, width_shift_range=0.05, hei
 
 
 #inceptionv3
-#model = get_inception_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes, show_trainability = False)
+model = get_inception_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes, show_trainability = False)
 
 # denseNet
-model = get_denseNet_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes)
+#model = get_denseNet_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes)
 
 #vgg16 w imagenet + empty dense layers
 #model = get_vgg_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes, freeze_layers=False)
@@ -117,7 +117,7 @@ callback = [tensorboard, save_best]
 
 
 model.compile(loss='categorical_crossentropy',
-          optimizer='adadelta',
+          optimizer='adam',
          metrics=['acc'])
 
 

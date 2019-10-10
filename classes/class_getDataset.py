@@ -107,7 +107,9 @@ class GetDataset:
         for i in tqdm(range(len(tot_list))):
 
             choice = index_of_element[i]
-            orig_ch = cv2.imread(tot_list[choice, 0]).shape[-1]
+            orig_ch = np.shape(cv2.imread(tot_list[choice, 0]))[-1]
+            if not orig_ch:
+                continue
             label = int(tot_list[choice, 1])
 
             if (orig_ch == 3) and (self.N_channels == 1):

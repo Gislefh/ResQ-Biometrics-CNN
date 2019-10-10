@@ -155,6 +155,12 @@ class Generator:
 					self.image = np.expand_dims(cv2.cvtColor(im_tmp, cv2.COLOR_BGR2GRAY), axis = -1)
 				else:
 					self.image = cv2.imread( image_list[choice, 0])[:, :, 0:self.N_channels]
+					
+					# BGR to RGB
+					if '.jpg' in tot_list[choice, 0]:
+						self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
+
+
 
 			
 				#normalize image to [0,1]
