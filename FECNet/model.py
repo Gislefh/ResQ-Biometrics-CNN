@@ -194,17 +194,12 @@ def NN2_model():
 
     #return model
 
-
-
-
-
-
 """
 -- Triplet loss function -- 
 gt = 1 or 2 or 3:
     for gt = 1 => e1 and e2 is the most similar
-    for gt = 2 => e2 and e3 is the moset similar  ### assuming this is correct - check that
-    for gt = 3 => e1 and e3 is the moset similar
+    for gt = 2 => e2 and e3 is the moset similar    ### assuming this is correct - check that
+    for gt = 3 => e1 and e3 is the moset similar    ### assuming this is correct - check that
 
 e_{1,2,3} - embedding
 
@@ -213,22 +208,22 @@ delta - a small margin
 def trip_loss(e1, e2, e3, gt, delta = 0.1):
         
     if gt == 1:
-        dist1 = np.sqrt( np.subtract(e1, e2) ** 2) - np.sqrt( np.subtract(e1, e3) ** 2) + delta
-        dist2 = np.sqrt( np.subtract(e1, e2) ** 2) - np.sqrt( np.subtract(e2, e3) ** 2) + delta
+        dist1 = distance.euclidean(e1, e2)**2 - distance.euclidean(e1, e3)**2 + delta
+        dist2 = distance.euclidean(e1, e2)**2 - distance.euclidean(e2, e3)**2 + delta
         loss = np.maximum(0, dist1) + np.maximum(0, dist2)
 
     elif gt == 2:
-        dist1 = np.sqrt( np.subtract(e2, e3) ** 2) - np.sqrt( np.subtract(e1, e3) ** 2) + delta
-        dist2 = np.sqrt( np.subtract(e2, e3) ** 2) - np.sqrt( np.subtract(e1, e2) ** 2) + delta
+        dist1 = distance.euclidean(e2, e3)**2 - distance.euclidean(e1, e3)**2 + delta
+        dist2 = distance.euclidean(e2, e3)**2 - distance.euclidean(e1, e2)**2 + delta
         loss = np.maximum(0, dist1) + np.maximum(0, dist2)
     
     elif gt == 3:
-        dist1 = np.sqrt( np.subtract(e1, e3) ** 2) - np.sqrt( np.subtract(e2, e3) ** 2) + delta
-        dist2 = np.sqrt( np.subtract(e1, e3) ** 2) - np.sqrt( np.subtract(e1, e2) ** 2) + delta
+        dist1 = distance.euclidean(e1, e3)**2 - distance.euclidean(e2, e3)**2 + delta
+        dist2 = distance.euclidean(e1, e3)**2 - distance.euclidean(e1, e2)**2 + delta
         loss = np.maximum(0, dist1) + np.maximum(0, dist2)
 
     else:
-        print('Ground Truth not in the scope')
+        print('--- Ground Truth not in the scope ---')
         return None
     
     return loss
@@ -278,12 +273,52 @@ def faceNet_inceptionv3_model(input_shape, embedding_size):
     # import inceptionV3. TODO - remove last n layers to get the otput of the model to be block 4e 
     incV3 = InceptionV3(include_top=False, weights='imagenet', input_shape=input_shape, pooling='max')
 
-    #mixed8 is the end of the inception 4e block
+    #mixed8 is the end of the inception 4e block - used in FECNet
     for i, layer in enumerate(incV3.layers):
         if layer.name == 'mixed8':
             layer_4e_index = i
             break
         
+
+    input_ = incV3.input
+    x = incV3.layers[layer_4e_index].output
+    out = Dense(embedding_size)(x)
+
+    image_embedder = Model(input_, out)
+
+
+
+    input_a = Input((input_shape[0], input_shape[1], input_shape[2]), name='anchor')
+    input_p = Input((input_shape[0], input_shape[1], input_shape[2]), name='positive')
+    input_n = Input((input_shape[0], input_shape[1], input_shape[2]), name='negative')
+
+    normalize = Lambda(lambda x: l2_normalize(x, axis=-1), name='normalize')
+
+    x = image_embedder(input_a)
+    output_a = normalize(x)
+    x = image_embedder(input_p)
+    output_p = normalize(x)
+    x = image_embedder(input_n)
+    output_n = normalize(x)
+
+    merged_vector = concatenate([output_a, output_p, output_n], axis=-1)
+
+    model = Model(inputs=[input_a, input_p, input_n],
+                  outputs=merged_vector)
+    return model
+
+
+def FECNet_inceptionv3_model(input_shape, embedding_size):
+    # import inceptionV3. TODO - remove last n layers to get the otput of the model to be block 4e 
+    incV3 = InceptionV3(include_top=False, weights='imagenet', input_shape=input_shape, pooling='max')
+
+    #mixed8 is the end of the inception 4e block - used in FECNet
+    for i, layer in enumerate(incV3.layers):
+        if layer.name == 'mixed8':
+            layer_4e_index = i
+            break
+
+    # insert denseNet here
 
     input_ = incV3.input
     x = incV3.layers[layer_4e_index].output
@@ -310,6 +345,7 @@ def faceNet_inceptionv3_model(input_shape, embedding_size):
     model = Model(inputs=[input_a, input_p, input_n],
                   outputs=merged_vector)
     return model
+
 
 if __name__ == "__main__":
     embedding_size = 128
