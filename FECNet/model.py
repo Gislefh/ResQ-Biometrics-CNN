@@ -279,6 +279,8 @@ def faceNet_inceptionv3_model(input_shape, embedding_size):
             layer_4e_index = i
             break
         
+    # use last layer
+    layer_4e_index = -1
 
     input_ = incV3.input
     x = incV3.layers[layer_4e_index].output
@@ -288,22 +290,22 @@ def faceNet_inceptionv3_model(input_shape, embedding_size):
 
 
 
-    input_a = Input((input_shape[0], input_shape[1], input_shape[2]), name='anchor')
-    input_p = Input((input_shape[0], input_shape[1], input_shape[2]), name='positive')
-    input_n = Input((input_shape[0], input_shape[1], input_shape[2]), name='negative')
+    input_1 = Input((input_shape[0], input_shape[1], input_shape[2]), name='image_1')
+    input_2 = Input((input_shape[0], input_shape[1], input_shape[2]), name='image_2')
+    input_3 = Input((input_shape[0], input_shape[1], input_shape[2]), name='image_3')
 
     normalize = Lambda(lambda x: l2_normalize(x, axis=-1), name='normalize')
 
-    x = image_embedder(input_a)
-    output_a = normalize(x)
-    x = image_embedder(input_p)
-    output_p = normalize(x)
-    x = image_embedder(input_n)
-    output_n = normalize(x)
+    x = image_embedder(input_1)
+    output_1 = normalize(x)
+    x = image_embedder(input_2)
+    output_2 = normalize(x)
+    x = image_embedder(input_3)
+    output_3 = normalize(x)
 
-    merged_vector = concatenate([output_a, output_p, output_n], axis=-1)
+    merged_vector = concatenate([output_1, output_2, output_3], axis=-1)
 
-    model = Model(inputs=[input_a, input_p, input_n],
+    model = Model(inputs=[input_1, input_2, input_3],
                   outputs=merged_vector)
     return model
 
@@ -347,22 +349,43 @@ def FECNet_inceptionv3_model(input_shape, embedding_size):
     return model
 
 
+def test_siam_model(input_shape, embedding_size):
+
+    def base_net(input_shape):
+        input_ = Input(shape=input_shape)
+        x = Flatten()(input_)
+        x = Dense(50, activation='relu')(x)
+        x = Dropout(0.1)(x)
+        x = Dense(50, activation='relu')(x)
+        return Model(input_, x)
+    
+    base_model = base_net(input_shape = input_shape)
+
+    input_1 = Input(shape=input_shape)
+    input_2 = Input(shape=input_shape)
+    input_3 = Input(shape=input_shape)
+
+    processed_1 = base_model(input_1)
+    processed_2 = base_model(input_2)
+    processed_3 = base_model(input_3)
+
+    normalize = Lambda(lambda x: l2_normalize(x, axis=-1), name='normalize')
+
+    x = normalize(processed_1)
+    out_1 = Dense(embedding_size)(x)
+
+    x = normalize(processed_2)
+    out_2 = Dense(embedding_size)(x)
+
+    x = normalize(processed_3)
+    out_3 = Dense(embedding_size)(x)
+
+    merged_vector = concatenate([out_1, out_2, out_3], axis=1)
+
+    model = Model(inputs=[input_1, input_2, input_3], outputs=merged_vector)
+    return model
+
 if __name__ == "__main__":
-    embedding_size = 128
-    shape = (224, 224, 3)
-    m = faceNet_inceptionv3_model(shape,embedding_size = embedding_size)
-    m.summary()
-    shape = (1, 224, 224, 3)
-    anchor = np.random.random_sample(shape)
-    positive = np.random.random_sample(shape)
-    negative = np.random.random_sample(shape)
 
-    pred = m.predict([anchor, positive, negative])
-
-    a = pred[0, 0:embedding_size]
-    b = pred[0, embedding_size:embedding_size*2]
-    c = pred[0, embedding_size*2:]   
-
-    dst_ab = distance.euclidean(a, b)
-    dst_ac = distance.euclidean(a, c)
-    print(dst_ab, dst_ac)
+    model = test_siam_model((100, 100, 3), 24)
+    model.summary()
