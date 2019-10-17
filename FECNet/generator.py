@@ -4,7 +4,7 @@ import cv2
 import matplotlib.pyplot as plt
 from random import shuffle
 
-
+from tqdm import tqdm
 
 class TripletGenerator:
 
@@ -101,20 +101,162 @@ class TripletGenerator:
         return image
 
 
+"""
+Test generator to test the new triplet loss function for FECNet
+"""
+class TripletTestGenerator:
+
+    def __init__(self, image_shape, batch_size, dataset = 'MNIST_DIGITS', data_len = 50000):
+        self.image_shape = image_shape
+        self.batch_size = batch_size
+        self.dataset = dataset
+        self.data_len = data_len
+
+
+        if self.dataset == 'MNIST_DIGITS':
+            self.x_orig, self.y_orig = self.__load_mnist_digits()
+        else:
+            raise Exception('Unknown dataset')
+
+    def flow(self):
+        triplets = self.__create_triplets()
+        if len(self.image_shape) == 2:     
+            X1 = np.zeros((self.batch_size,self.image_shape[0], self.image_shape[1]))
+            X2 = np.zeros((self.batch_size,self.image_shape[0], self.image_shape[1]))
+            X3 = np.zeros((self.batch_size,self.image_shape[0], self.image_shape[1]))
+        elif len(self.image_shape) == 3:
+            X1 = np.zeros((self.batch_size,self.image_shape[0], self.image_shape[1], self.image_shape[2]))
+            X2 = np.zeros((self.batch_size,self.image_shape[0], self.image_shape[1], self.image_shape[2]))
+            X3 = np.zeros((self.batch_size,self.image_shape[0], self.image_shape[1], self.image_shape[2]))
+        Y = np.zeros((self.batch_size))
+
+        for i, (im1,im2,im3,label) in enumerate(triplets):
+            X1[i%self.batch_size] = im1
+            X2[i%self.batch_size] = im2
+            X3[i%self.batch_size] = im3
+            Y[i%self.batch_size] = label
+
+            if i%self.batch_size == self.batch_size -1:
+                X = [X1, X2, X3]
+                yield X, Y
+    def get_data_len(self):
+        return self.data_len
+
+    def __create_triplets(self):
+        tmp = []
+        for i, old_label in enumerate(self.y_orig):
+            if i == self.data_len:
+                break
+
+            rand_c = np.random.randint(1,4)
+            
+            if rand_c == 1:
+                im1 = self.x_orig[i]
+                im2, im3, label = self.__find_next(old_label, i)
+                if label == 0:
+                    tmp.append([im1, im2, im3, 3])
+                else:
+                    tmp.append([im1, im2, im3, 2])
+
+            elif rand_c == 2:
+                im2 = self.x_orig[i]
+                im1, im3, label = self.__find_next(old_label, i)
+                if label == 0:
+                    tmp.append([im1, im2, im3, 3])
+                else:
+                    tmp.append([im1, im2, im3, 1])
+
+            else:
+                im3 = self.x_orig[i]
+                im1, im2, label = self.__find_next(old_label, i)
+                if label == 0:
+                    tmp.append([im1, im2, im3, 2])
+                else:
+                    tmp.append([im1, im2, im3, 1])
+
+        return tmp
+
+
+    def __load_mnist_digits(self):
+        from keras.datasets import mnist
+        (x_train, y_train), (_, _) = mnist.load_data()
+        return x_train, y_train
+
+    def __find_next(self, old_label, index):
+        im1_bool = False
+        im2_bool = False
         
+        for i in range(index+1,len(self.y_orig)):
+
+            if self.y_orig[i] == old_label and im1_bool == False:
+                im1 = self.x_orig[i]
+                im1_bool = True
+
+            if self.y_orig[i] != old_label and im2_bool == False:
+                im2 = self.x_orig[i]
+                im2_bool = True
+
+            if im1_bool and im2_bool:
+                if np.random.rand() < 0.5:
+                    return im1, im2, 0 
+                else:
+                    return im2, im1, 1
+
+                    
+
 if __name__ == '__main__':
+    from generator import TripletGenerator
+    from model import faceNet_inceptionv3_model, test_siam_model
+    from utils import distances
+    from custom_loss import TripletLoss
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import tensorflow as tf
+    from tensorflow.python.keras import backend as K
+
+
     path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\FEC_dataset\\images\\two-class_triplets'
-    gen = TripletGenerator(path)
-    a = gen.flow_from_dir()
+    out_shape = (28, 28)
+    delta_trip_loss = 0.1
+    embedding_size = 16 # faceNet uses 128, FECNet uses 16.
+    batch_size = 8
 
-    print(gen.get_data_len())
-    exit()
 
-    for x,y in a:
+
+    # Data Generator 
+    #trip_gen = TripletGenerator(path, out_shape = out_shape, batch_size=batch_size)
+    #gen = trip_gen.flow_from_dir()
+    #data_len = trip_gen.get_data_len()
+
+    G = TripletTestGenerator(out_shape, batch_size)
+    gen = G.flow()
+    data_len = G.get_data_len()
+
+
+
+
+    # Model
+    #model = faceNet_inceptionv3_model(input_shape = out_shape, embedding_size = embedding_size)
+    model = test_siam_model(input_shape=out_shape, embedding_size=embedding_size)
+    model.summary()
+
+
+    # Loss
+    L = TripletLoss(delta=delta_trip_loss, embedding_size=embedding_size)
+
+
+    model.compile(loss=L.trip_loss,
+                optimizer='adam')
+
+    history = model.fit_generator(gen, steps_per_epoch=data_len/batch_size, epochs=3, shuffle=False)
+
+
+    ####### Predict
+    test_trip_gen = TripletGenerator(path, out_shape = out_shape, batch_size=1)
+    test_gen = test_trip_gen.flow_from_dir()
+
+    for x,y in test_gen:
+        prediction = model.predict(x, batch_size = batch_size, steps=1)
+        distances(np.squeeze(prediction), embedding_size)
         print(y)
-        for i in range(3):
-            plt.figure(str(i))
-            plt.imshow(x[i])    
-        plt.show()
         exit()
-        
