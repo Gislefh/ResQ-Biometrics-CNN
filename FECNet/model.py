@@ -380,7 +380,10 @@ def test_siam_model(input_shape, embedding_size):
     x = normalize(processed_3)
     out_3 = Dense(embedding_size)(x)
 
-    merged_vector = concatenate([out_1, out_2, out_3], axis=1)
+    merged_vector = concatenate([out_1, out_2, out_3], axis=-1)
+
+    # triplet loss layer here, maybe
+
 
     model = Model(inputs=[input_1, input_2, input_3], outputs=merged_vector)
     return model
@@ -389,3 +392,31 @@ if __name__ == "__main__":
 
     model = test_siam_model((100, 100, 3), 24)
     model.summary()
+    
+    from keras.utils import plot_model
+    plot_model(model, to_file='model.png')
+
+    """
+    from keras import backend as K
+    from keras.layers import Layer
+
+    class MyLayer(Layer):
+
+        def __init__(self, output_dim, **kwargs):
+            self.output_dim = output_dim
+            super(MyLayer, self).__init__(**kwargs)
+
+        def build(self, input_shape):
+            # Create a trainable weight variable for this layer.
+            self.kernel = self.add_weight(name='kernel', 
+                                        shape=(input_shape[1], self.output_dim),
+                                        initializer='uniform',
+                                        trainable=True)
+            super(MyLayer, self).build(input_shape)  # Be sure to call this at the end
+
+        def call(self, x):
+            return K.dot(x, self.kernel)
+
+        def compute_output_shape(self, input_shape):
+            return (input_shape[0], self.output_dim)
+    """
