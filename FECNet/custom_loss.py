@@ -9,59 +9,67 @@ class TripletLoss:
         self.delta = delta
         self.embedding_size = embedding_size
 
+    def trip_loss(self, y_true, y_pred):
+        zero = tf.constant(0, dtype = 'float32')
 
+        def fun(input_):
+            def y_is_1():
+                dist1 = tf.math.square(tf.norm(e2 - e3, ord=2)) - tf.math.square(tf.norm(e1 - e3, ord=2)) + self.delta
+                dist2 = tf.math.square(tf.norm(e2 - e3, ord=2)) - tf.math.square(tf.norm(e1 - e2, ord=2)) + self.delta 
+                loss = tf.math.maximum(zero, dist1) + tf.math.maximum(zero, dist2)
+                return loss
+            def y_is_2():
+                dist1 = tf.math.square(tf.norm(e1 - e3, ord=2)) - tf.math.square(tf.norm(e2 - e3, ord=2)) + self.delta
+                dist2 = tf.math.square(tf.norm(e1 - e3, ord=2)) - tf.math.square(tf.norm(e1 - e3, ord=2)) + self.delta 
+                loss = tf.math.maximum(zero, dist1) + tf.math.maximum(zero, dist2)
+                return loss
+            def y_is_3():
+                dist1 = tf.math.square(tf.norm(e1 - e2, ord=2)) - tf.math.square(tf.norm(e1 - e3, ord=2)) + self.delta
+                dist2 = tf.math.square(tf.norm(e1 - e2, ord=2)) - tf.math.square(tf.norm(e2 - e3, ord=2)) + self.delta 
+                loss = tf.math.maximum(zero, dist1) + tf.math.maximum(zero, dist2)
+                return loss
 
+            def ret_none():
+                return tf.constant(17, dtype='float32')
 
-    """
-    -- Triplet loss function -- 
-    gt = 1 or 2 or 3:
-        for gt = 1 => e1 and e2 is the most similar
-        for gt = 2 => e2 and e3 is the moset similar    ### assuming this is correct - check that
-        for gt = 3 => e1 and e3 is the moset similar    ### assuming this is correct - check that
+            y_true_, y_pred_ = input_ 
 
-    e_{1,2,3} - embedding
+            e1 = y_pred_[0:self.embedding_size]
+            e2 = y_pred_[self.embedding_size:2*self.embedding_size]
+            e3 = y_pred_[2*self.embedding_size:]
+      
+            y_true_ = tf.squeeze(y_true_)
+            y_true_ = tf.dtypes.cast(y_true_, 'int32')
+            loss = tf.switch_case(y_true_, branch_fns=[ret_none, y_is_1, y_is_2, y_is_3], default=ret_none)
+            return loss
 
-    delta - a small margin
-    """
-    def trip_loss(self, y, y_pred):
-        # split the output from the model
-        e1 = y_pred[:, 0:self.embedding_size]
-        e2 = y_pred[:, self.embedding_size:2*self.embedding_size]
-        e3 = y_pred[:, 2*self.embedding_size:]
+        loss = tf.map_fn(fun, (y_true, y_pred), back_prop=True, infer_shape=False, dtype='float32')
 
+        return K.mean(loss) #scalar or embedding size? - now using scalar
 
-        y = 1
-        if y == 1: ## TODO not sure if the if's are correct- don't think so
-            dist1 = tf.math.square(tf.norm(e1 - e2, ord=2)) - tf.math.square(tf.norm(e1 - e3, ord=2)) + self.delta
-            dist2 = tf.math.square(tf.norm(e1 - e2, ord=2)) - tf.math.square(tf.norm(e2 - e3, ord=2)) + self.delta 
-            loss = tf.math.maximum(0.0, dist1) + tf.math.maximum(0.0, dist2)
+      
 
-        elif y == 2:
-            dist1 = distance.euclidean(e2, e3)**2 - distance.euclidean(e1, e3)**2 + self.delta
-            dist2 = distance.euclidean(e2, e3)**2 - distance.euclidean(e1, e2)**2 + self.delta
-            loss = np.maximum(0, dist1) + np.maximum(0, dist2)
-        
-        elif y == 3:
-            dist1 = distance.euclidean(e1, e3)**2 - distance.euclidean(e2, e3)**2 + self.delta
-            dist2 = distance.euclidean(e1, e3)**2 - distance.euclidean(e1, e2)**2 + self.delta
-            loss = np.maximum(0, dist1) + np.maximum(0, dist2)
+if __name__ == '__main__':
+    import tensorflow as tf
+    import numpy as np
+    def Custom_loss(y,outputs):
+        hold_loss = []
+        for exp,pred in zip(y,outputs):
+            if exp >= pred:
+                result = tf.pow(pred * 0.5,2) - exp
+                hold_loss.append(result)
+            else:
+                hold_loss.append(tf.subtract(pred-exp))
+        return tf.reduce_mean(hold_loss)
 
-        else:
-            print('--- Ground Truth not in the scope ---')
-            return None
-        
-        return K.mean(loss)
+    L = TripletLoss(delta=0.1, embedding_size=24)
+    
+    np_x = np.random.randn(16,24*3)
+    np_x = np_x.astype(np.float32)
+    np_y = np.random.randint(3,4, size= (16, 1))
 
-    """ FROM GIT - faceNet
+    x = tf.constant(np_x)
+    y = tf.constant(np_y)
 
-    def triplet_loss(y_true, y_pred):
-        a_pred = y_pred[:, 0:128]
-        p_pred = y_pred[:, 128:256]
-        n_pred = y_pred[:, 256:384]
-        positive_distance = K.square(tf.norm(a_pred - p_pred, axis=-1))
-        negative_distance = K.square(tf.norm(a_pred - n_pred, axis=-1))
-        loss = K.mean(K.maximum(0.0, positive_distance - negative_distance + alpha))
-        return loss
-    """
-
-
+    with tf.Session() as sess:
+        print(sess.run(L.trip_loss(y, x)))
