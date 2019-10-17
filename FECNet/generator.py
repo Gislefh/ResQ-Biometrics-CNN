@@ -139,6 +139,7 @@ class TripletTestGenerator:
             if i%self.batch_size == self.batch_size -1:
                 X = [X1, X2, X3]
                 yield X, Y
+                
     def get_data_len(self):
         return self.data_len
 
