@@ -8,11 +8,12 @@ from random import shuffle
 
 class TripletGenerator:
 
-    def __init__(self, path, out_shape, augment = False):
+    def __init__(self, path, out_shape, batch_size, augment = False):
         self.path = path
         self.triplet_paths = []
         self.augment = augment
         self.out_shape = out_shape
+        self.batch_size = batch_size
 
     def flow_from_dir(self):
         if not self.triplet_paths:
@@ -22,14 +23,24 @@ class TripletGenerator:
             print('triplet list is empty')
             return
 
+        X1 = np.zeros((self.batch_size, self.out_shape[0], self.out_shape[1], self.out_shape[2]))
+        X2 = np.zeros((self.batch_size, self.out_shape[0], self.out_shape[1], self.out_shape[2]))
+        X3 = np.zeros((self.batch_size, self.out_shape[0], self.out_shape[1], self.out_shape[2]))
+        y = np.zeros((self.batch_size))
+
         while True:
             shuffle(self.triplet_paths)
-            for triplet in self.triplet_paths:
+            for i, triplet in enumerate(self.triplet_paths):
                 tmp_list = self.__open_images(triplet)
-                X = [tmp_list[0], tmp_list[1], tmp_list[2]]
-                y = int(triplet[-1])
 
-                yield X, y
+                X1[i%self.batch_size] = tmp_list[0]
+                X2[i%self.batch_size] = tmp_list[1]
+                X3[i%self.batch_size] = tmp_list[2]
+                y[i%self.batch_size] = int(triplet[-1])
+
+                if i%self.batch_size == self.batch_size -1:
+                    X = [X1, X2, X3]
+                    yield X, y
 
 
     def get_data_len(self):
@@ -72,7 +83,7 @@ class TripletGenerator:
             im = np.clip(im/255, 0, 1)
 
             # add 1-dim in front
-            im = np.expand_dims(im, 0)
+            #im = np.expand_dims(im, 0)
 
 
             # augment image
