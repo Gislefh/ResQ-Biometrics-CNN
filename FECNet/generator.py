@@ -4,8 +4,6 @@ import cv2
 import matplotlib.pyplot as plt
 from random import shuffle
 
-from tqdm import tqdm
-
 class TripletGenerator:
 
     def __init__(self, path, out_shape, batch_size, augment = False):
@@ -130,15 +128,16 @@ class TripletTestGenerator:
             X3 = np.zeros((self.batch_size,self.image_shape[0], self.image_shape[1], self.image_shape[2]))
         Y = np.zeros((self.batch_size))
 
-        for i, (im1,im2,im3,label) in enumerate(triplets):
-            X1[i%self.batch_size] = im1
-            X2[i%self.batch_size] = im2
-            X3[i%self.batch_size] = im3
-            Y[i%self.batch_size] = label
+        while True:
+            for i, (im1,im2,im3,label) in enumerate(triplets):
+                X1[i%self.batch_size] = im1
+                X2[i%self.batch_size] = im2
+                X3[i%self.batch_size] = im3
+                Y[i%self.batch_size] = label
 
-            if i%self.batch_size == self.batch_size -1:
-                X = [X1, X2, X3]
-                yield X, Y
+                if i%self.batch_size == self.batch_size -1:
+                    X = [X1, X2, X3]
+                    yield X, Y
                 
     def get_data_len(self):
         return self.data_len
@@ -214,13 +213,14 @@ if __name__ == '__main__':
     import numpy as np
     import tensorflow as tf
     from tensorflow.python.keras import backend as K
+    import keras
 
 
     path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\FEC_dataset\\images\\two-class_triplets'
     out_shape = (28, 28)
-    delta_trip_loss = 0.1
+    delta_trip_loss = 0.3
     embedding_size = 16 # faceNet uses 128, FECNet uses 16.
-    batch_size = 8
+    batch_size = 32
 
 
 
@@ -229,11 +229,10 @@ if __name__ == '__main__':
     #gen = trip_gen.flow_from_dir()
     #data_len = trip_gen.get_data_len()
 
+    #MNIST digits
     G = TripletTestGenerator(out_shape, batch_size)
     gen = G.flow()
     data_len = G.get_data_len()
-
-
 
 
     # Model
@@ -249,14 +248,33 @@ if __name__ == '__main__':
     model.compile(loss=L.trip_loss,
                 optimizer='adam')
 
-    history = model.fit_generator(gen, steps_per_epoch=data_len/batch_size, epochs=3, shuffle=False)
+
+    # Callbacks 
+    save_model_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\ResQ-Biometrics-CNN\\FECNet\\Models\\'
+    new_model_name = 'MNIST_digits_test_only_weights.h5'
+    save_best = keras.callbacks.ModelCheckpoint(save_model_path + new_model_name,
+                                                monitor='loss',
+                                                verbose=1,
+                                                save_best_only=True,
+                                                save_weights_only=True,
+                                                mode='min',
+                                                period=1)
+
+    # Fit
+    history = model.fit_generator(gen, steps_per_epoch=data_len/batch_size, epochs=30, shuffle=False, callbacks = [save_best])
 
 
     ####### Predict
-    test_trip_gen = TripletGenerator(path, out_shape = out_shape, batch_size=1)
-    test_gen = test_trip_gen.flow_from_dir()
+    #test_trip_gen = TripletGenerator(path, out_shape = out_shape, batch_size=1)
+    #test_gen = test_trip_gen.flow_from_dir()
+    
+    batch_size = 1
 
-    for x,y in test_gen:
+    G = TripletTestGenerator(out_shape, batch_size)
+    gen = G.flow()
+    data_len = G.get_data_len()
+
+    for x,y in gen:
         prediction = model.predict(x, batch_size = batch_size, steps=1)
         distances(np.squeeze(prediction), embedding_size)
         print(y)
