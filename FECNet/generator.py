@@ -3,28 +3,35 @@ import os
 import cv2
 import matplotlib.pyplot as plt
 from random import shuffle
+from scipy.ndimage import rotate, zoom
+import time
 
 class TripletGenerator:
 
-    def __init__(self, path, out_shape, batch_size, augment = False):
-        self.path = path
-        self.triplet_paths = []
-        self.augment = augment
-        self.out_shape = out_shape
-        self.batch_size = batch_size
+    def __init__(self, path, out_shape, batch_size, augment = False, data = None, train_val_split = 0.3):
 
-    def flow_from_dir(self):
+        self.path = path                            # Path to folder containing images
+        self.triplet_paths = []                     # init trip train paths        
+        self.triplet_paths_val = []                 # init trip validation paths
+        self.augment = augment                      # if True -> augment the data. else dont
+        self.out_shape = out_shape                  # (x, y, challels)
+        self.batch_size = batch_size                # batch size
+        self.data = data                            # Number of triplets
+        self.train_val_split = train_val_split      # Size of the validation set
+
+        # Get Triplet Lists
+        self.__triplet_list()
+
+
+    def flow_from_dir(self, set = 'train'):
         if not self.triplet_paths:
-            self.__triplet_list()
+            print('No data found')
+            return None
 
-        if not self.triplet_paths:
-            print('triplet list is empty')
-            return
-
-        X1 = np.zeros((self.batch_size, self.out_shape[0], self.out_shape[1], self.out_shape[2]))
-        X2 = np.zeros((self.batch_size, self.out_shape[0], self.out_shape[1], self.out_shape[2]))
-        X3 = np.zeros((self.batch_size, self.out_shape[0], self.out_shape[1], self.out_shape[2]))
-        y = np.zeros((self.batch_size))
+        X1 = np.zeros((self.batch_size, self.out_shape[0], self.out_shape[1], self.out_shape[2]), dtype=np.float32)
+        X2 = np.zeros((self.batch_size, self.out_shape[0], self.out_shape[1], self.out_shape[2]), dtype=np.float32)
+        X3 = np.zeros((self.batch_size, self.out_shape[0], self.out_shape[1], self.out_shape[2]), dtype=np.float32)
+        y = np.zeros((self.batch_size), dtype=np.float32)
 
         while True:
             shuffle(self.triplet_paths)
@@ -41,10 +48,13 @@ class TripletGenerator:
                     yield X, y
 
 
-    def get_data_len(self):
+    def get_data_len(self, set = 'train'):
         if not self.triplet_paths:
-            self.__triplet_list()
-        return len(self.triplet_paths)
+            print('No data found')
+        if set == 'train':
+            return len(self.triplet_paths)
+        if set == 'val':
+            return len(self.triplet_paths_val)
 
     '''
     -  function assumes the names of the files are saved as: {row_in_cvs}_{image_nr_in_triplet}_{label}.(jpg/png...)
@@ -56,7 +66,19 @@ class TripletGenerator:
         for i, im_name in enumerate(sorted(os.listdir(self.path))):
             tmp_list.append(self.path + '\\' + im_name)
 
-            if i%3 == 2:
+            # Break if data_len is reached
+            if self.data:
+                if i >= self.data:
+                    break
+
+            # Save as val
+            if (np.random.rand() <= self.train_val_split) and (i%3 == 2):  ## NOTE the validation set will be random -> each time the flow 
+                label = (im_name.split('_')[-1]).split('.')[0]
+                self.triplet_paths_val.append([tmp_list[0], tmp_list[1], tmp_list[2], label])
+                tmp_list = []    
+
+            # Save as train
+            elif i%3 == 2:              
                 label = (im_name.split('_')[-1]).split('.')[0]
                 self.triplet_paths.append([tmp_list[0], tmp_list[1], tmp_list[2], label])
                 tmp_list = []
@@ -77,18 +99,19 @@ class TripletGenerator:
             if triplet[i].split('.')[-1] == 'jpg':
                 im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
 
-            # normalize
-            im = np.clip(im/255, 0, 1)
-
             # add 1-dim in front
             #im = np.expand_dims(im, 0)
-
+            if im.shape != self.out_shape:
+                if im.shape[:2] != self.out_shape[:2]:
+                    seq = [self.out_shape[0] / im.shape[0], self.out_shape[1] / im.shape[1], 1]
+                    im = zoom(im, seq, order = 1)
 
             # augment image
             if self.augment: 
                 im = self.__augment(im)
 
-            
+            # normalize
+            im = np.clip(im/255, 0, 1)
 
             tmp_list.append(im)
 
@@ -96,6 +119,14 @@ class TripletGenerator:
 
     #TODO add augmentations
     def __augment(self, image):
+
+        # Rotate
+        ang = np.random.rand() * 30 ## rotate 20 deg
+        if np.random.rand() < 0.5:
+            image = rotate(image, -ang, order=1, reshape=False)
+        else:
+            image = rotate(image, ang, order=1, reshape=False)
+
         return image
 
 
