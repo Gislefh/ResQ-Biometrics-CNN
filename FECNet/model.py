@@ -89,32 +89,35 @@ def FECNet_inceptionv3_model(input_shape, embedding_size):
             layer_4e_index = i
             break
 
-    # insert denseNet here
-
     input_ = incV3.input
     x = incV3.layers[layer_4e_index].output
+    
+    #TODO insert denseNet here
+
+    x = GlobalMaxPooling2D()(x)
+    x = Dense(512)(x)
     out = Dense(embedding_size)(x)
     image_embedder = Model(input_, out)
-    image_embedder.summary()
-    exit()
 
-    input_a = Input((input_shape[0], input_shape[1], input_shape[2]), name='anchor')
-    input_p = Input((input_shape[0], input_shape[1], input_shape[2]), name='positive')
-    input_n = Input((input_shape[0], input_shape[1], input_shape[2]), name='negative')
+
+    image_1 = Input((input_shape[0], input_shape[1], input_shape[2]), name='im1')
+    image_2 = Input((input_shape[0], input_shape[1], input_shape[2]), name='im2')
+    image_3 = Input((input_shape[0], input_shape[1], input_shape[2]), name='im3')
 
     normalize = Lambda(lambda x: l2_normalize(x, axis=-1), name='normalize')
 
-    x = image_embedder(input_a)
-    output_a = normalize(x)
-    x = image_embedder(input_p)
-    output_p = normalize(x)
-    x = image_embedder(input_n)
-    output_n = normalize(x)
+    x = image_embedder(image_1)
+    output_1 = normalize(x)
+    x = image_embedder(image_2)
+    output_2 = normalize(x)
+    x = image_embedder(image_3)
+    output_3 = normalize(x)
 
-    merged_vector = concatenate([output_a, output_p, output_n], axis=-1)
+    merged_vector = concatenate([output_1, output_2, output_3], axis=-1)
 
-    model = Model(inputs=[input_a, input_p, input_n],
+    model = Model(inputs=[image_1, image_2, image_3],
                   outputs=merged_vector)
+
     return model
 
 
