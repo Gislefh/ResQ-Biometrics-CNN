@@ -4,9 +4,13 @@ import cv2
 import matplotlib.pyplot as plt
 from random import shuffle
 from scipy.ndimage import rotate, zoom
-import time
+
 
 class TripletGenerator:
+
+    """
+    Generator for FECNet dataset. Assumes that the images are all saved in the same folder (for now).
+    """
 
     def __init__(self, path, out_shape, batch_size, augment = False, data = None, train_val_split = 0.3):
 
@@ -113,12 +117,14 @@ class TripletGenerator:
                     seq = [self.out_shape[0] / im.shape[0], self.out_shape[1] / im.shape[1], 1]
                     im = zoom(im, seq, order = 1)
 
+
             # augment image
             if self.augment: 
                 im = self.__augment(im)
 
             # normalize
             im = np.clip(im/255, 0, 1)
+
 
             tmp_list.append(im)
 
@@ -127,12 +133,23 @@ class TripletGenerator:
     #TODO add more augmentations
     def __augment(self, image):
 
-        # Rotate
-        ang = np.random.rand() * 30 ## rotate 20 deg
+        # Rotate - rotates +- n deg
+        n = 30
+        ang = np.random.rand() * n 
         if np.random.rand() < 0.5:
             image = rotate(image, -ang, order=1, reshape=False)
         else:
             image = rotate(image, ang, order=1, reshape=False)
+
+        # Flip - about the horisontal axis
+        if np.random.rand() > 0.5:
+            image = np.flip(image, axis = 1)
+
+        # Gamma transfrom - range: [min_, max]
+        min_, max_ = 0.8, 1.1
+        gamma = np.random.uniform(min_, max_)
+        image = np.power(image, gamma)
+
 
         return image
 
@@ -240,80 +257,202 @@ class TripletTestGenerator:
                 else:
                     return im2, im1, 1
 
-                    
+
+
+
+class TripletFromOtherDataset:
+    """
+    -- Generator creating triplets from dataset with defined facial expressions classes -- 
+
+    flow_from_dir - ment for training 
+
+    ret_with_label - ment for testing
+
+    path with images aved as:
+        train_folder:
+            - angry
+                - im1.jpg
+                - im2.jpg
+                ...
+            - sad 
+                - im1.jpg
+                - im2.jpg
+                ...
+        ...
+    """
+    def __init__(self, data_path, batch_size, image_shape, augment = True, label_list = [], N_images_per_label = None):
+        # Constants
+        self.data_path = data_path
+        self.batch_size = batch_size
+        self.image_shape = image_shape
+        self.label_list = label_list
+        self.N_images_per_label = N_images_per_label
+        self.augment = augment
+
+        # Functions
+
+
+
+    def get_labels(self):
+        return self.labels
+
+    def ret_with_label(self):
+        
+
+    def flow_from_dir(self):
+        self.image_list, self.labels = self.__get_image_paths()
+        triplets = self.__find_triplets()
+
+        X1 = np.zeros((self.batch_size,self.image_shape[0], self.image_shape[1], self.image_shape[2]))
+        X2 = np.zeros((self.batch_size,self.image_shape[0], self.image_shape[1], self.image_shape[2]))
+        X3 = np.zeros((self.batch_size,self.image_shape[0], self.image_shape[1], self.image_shape[2]))
+        Y = np.zeros((self.batch_size))
+
+        while True:
+            for i, (im1,im2,im3,label) in enumerate(triplets):
+                X1[i%self.batch_size] = self.__get_image(im1)
+                X2[i%self.batch_size] = self.__get_image(im2)
+                X3[i%self.batch_size] = self.__get_image(im3)
+                Y[i%self.batch_size] = label
+
+                if i%self.batch_size == self.batch_size -1:
+                    X = [X1, X2, X3]
+                    yield X, Y
+
+    def __get_image_paths(self):
+        image_list = []
+        labels = []
+        
+        folder_index = 0
+
+        for folder in os.listdir(self.data_path):
+            if self.label_list:
+                if folder not in self.label_list:
+                    continue
+                else:
+                    labels.append(folder)
+            else:
+                labels.append(folder)
+            folder_index += 1
+
+            for image_index, image in enumerate(os.listdir(self.data_path + '/' + folder)):
+                if self.N_images_per_label:
+                    if image_index > self.N_images_per_label:
+                        break
+                image_list.append([self.data_path + '/' + folder + '/' + image, folder_index])
+        shuffle(image_list)
+        return image_list, labels
+
+    def __get_image(self, path):
+        im = cv2.imread(path)
+        if not im:
+            print('-- FROM SELF -- No image found in given path')
+            exit()
+        
+        # GRAY to RBG or BGR to RGB
+        if len(im.shape) != 3:
+            im = cv2.cvtColor(im, cv2.COLOR_GRAY2RGB)
+        elif path.split('.')[-1] == 'jpg':
+            im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+        
+        # Reshape
+        if im.shape != self.image_shape:		
+            factor_x = self.image_shape[0] / im.shape[0]
+            factor_y = self.image_shape[1] / im.shape[1]
+            im = ndimage.zoom(im, (factor_x, factor_y, 1), order = 1)
+        
+        # Augment
+        if self.augment:
+            # Rotate - rotates +- n deg
+            n = 30
+            ang = np.random.rand() * n 
+            if np.random.rand() < 0.5:
+                im = rotate(im, -ang, order=1, reshape=False)
+            else:
+                im = rotate(im, ang, order=1, reshape=False)
+
+            # Flip - about the horisontal axis
+            if np.random.rand() > 0.5:
+                im = np.flip(im, axis = 1)
+
+            # Gamma transfrom - range: [min_, max]
+            min_, max_ = 0.8, 1.1
+            gamma = np.random.uniform(min_, max_)
+            im = np.power(im, gamma)
+
+        return im
+
+    def __find_triplets(self):
+        trip = []
+        for index, [im_path, label] in enumerate(self.image_list):
+            if self.N_images_per_label:
+                if index >= self.N_images_per_label:
+                    break
+            im = im_path
+            
+            rand_c = np.random.randint(1,4)
+            
+            if rand_c == 1:
+                im1 = im
+                im2, im3, label = self.__find_next(label, index)
+                if label == 0:
+                    trip.append([im1, im2, im3, 3])
+                elif label == 2:
+                    break
+                else:
+                    trip.append([im1, im2, im3, 2])
+
+            elif rand_c == 2:
+                im2 = im
+                im1, im3, label = self.__find_next(label, index)
+                if label == 0:
+                    trip.append([im1, im2, im3, 3])
+                elif label == 2:
+                    break
+                else:
+                    trip.append([im1, im2, im3, 1])
+
+            else:
+                im3 = im
+                im1, im2, label = self.__find_next(label, index)
+                if label == 0:
+                    trip.append([im1, im2, im3, 2])
+                elif label == 2:
+                    break
+                else:
+                    trip.append([im1, im2, im3, 1])
+        shuffle(trip)
+        return trip
+
+
+    def __find_next(self, label, index):
+        im1_bool = False
+        im2_bool = False
+        for i in range(index+1,len(self.image_list)):
+
+            if self.image_list[i][1] == label and im1_bool == False:
+                if 
+                im1 = self.image_list[i][0]
+                im1_bool = True
+
+            if self.image_list[i][1] != label and im2_bool == False:
+                im2 = self.image_list[i][0]
+                im2_bool = True
+
+            if im1_bool and im2_bool:
+                if np.random.rand() < 0.5:
+                    return im1, im2, 0 
+                else:
+                    return im2, im1, 1
+            
+        if (not im1_bool) or (not im2_bool): # not found any matches - end search
+            return 0, 0, 2 
+
+
 
 if __name__ == '__main__':
-    from generator import TripletGenerator
-    from model import faceNet_inceptionv3_model, test_siam_model
-    from utils import distances
-    from custom_loss import TripletLoss
-    import matplotlib.pyplot as plt
-    import numpy as np
-    import tensorflow as tf
-    from tensorflow.python.keras import backend as K
-    import keras
-
-
-    path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\FEC_dataset\\images\\two-class_triplets'
-    out_shape = (28, 28)
-    delta_trip_loss = 0.3
-    embedding_size = 16 # faceNet uses 128, FECNet uses 16.
-    batch_size = 32
-
-
-
-    # Data Generator 
-    #trip_gen = TripletGenerator(path, out_shape = out_shape, batch_size=batch_size)
-    #gen = trip_gen.flow_from_dir()
-    #data_len = trip_gen.get_data_len()
-
-    #MNIST digits
-    G = TripletTestGenerator(out_shape, batch_size)
-    gen = G.flow()
-    data_len = G.get_data_len()
-
-
-    # Model
-    #model = faceNet_inceptionv3_model(input_shape = out_shape, embedding_size = embedding_size)
-    model = test_siam_model(input_shape=out_shape, embedding_size=embedding_size)
-    model.summary()
-
-
-    # Loss
-    L = TripletLoss(delta=delta_trip_loss, embedding_size=embedding_size)
-
-
-    model.compile(loss=L.trip_loss,
-                optimizer='adam')
-
-
-    # Callbacks 
-    save_model_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\ResQ-Biometrics-CNN\\FECNet\\Models\\'
-    new_model_name = 'MNIST_digits_test_only_weights.h5'
-    save_best = keras.callbacks.ModelCheckpoint(save_model_path + new_model_name,
-                                                monitor='loss',
-                                                verbose=1,
-                                                save_best_only=True,
-                                                save_weights_only=True,
-                                                mode='min',
-                                                period=1)
-
-    # Fit
-    history = model.fit_generator(gen, steps_per_epoch=data_len/batch_size, epochs=30, shuffle=False, callbacks = [save_best])
-
-
-    ####### Predict
-    #test_trip_gen = TripletGenerator(path, out_shape = out_shape, batch_size=1)
-    #test_gen = test_trip_gen.flow_from_dir()
-    
+    data_path = 'C:/Users/47450/Documents/ResQ Biometrics/Data sets/cat_dog/test_set/test_set'
     batch_size = 1
-
-    G = TripletTestGenerator(out_shape, batch_size)
-    gen = G.flow()
-    data_len = G.get_data_len()
-
-    for x,y in gen:
-        prediction = model.predict(x, batch_size = batch_size, steps=1)
-        distances(np.squeeze(prediction), embedding_size)
-        print(y)
-        exit()
+    
+    T = TripletFromOtherDataset(data_path, batch_size, label_list = [], N_images_per_label = None)
+    T.flow_from_dir()
