@@ -290,17 +290,28 @@ class TripletFromOtherDataset:
         self.augment = augment
 
         # Functions
-
+        self.image_list, self.labels = self.__get_image_paths()
 
 
     def get_labels(self):
         return self.labels
 
     def ret_with_label(self):
-        
+        X1 = np.zeros((1, self.image_shape[0], self.image_shape[1], self.image_shape[2]))
+        X2 = np.zeros((1, self.image_shape[0], self.image_shape[1], self.image_shape[2]))
+        X3 = np.zeros((1, self.image_shape[0], self.image_shape[1], self.image_shape[2]))
+        Y = np.zeros((3))
+        while True:
+            for index, [im_path, label] in enumerate(self.image_list):
+                pass
+                
+
+
+
+
+
 
     def flow_from_dir(self):
-        self.image_list, self.labels = self.__get_image_paths()
         triplets = self.__find_triplets()
 
         X1 = np.zeros((self.batch_size,self.image_shape[0], self.image_shape[1], self.image_shape[2]))
