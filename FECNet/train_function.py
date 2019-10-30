@@ -82,7 +82,7 @@ class Train:
                     optimizer=self.optimizer)
 
     def __callbacks(self):
-        save_best = keras.callbacks.ModelCheckpoint(save_model_path + new_model_name,
+        save_best = keras.callbacks.ModelCheckpoint(self.save_model_path + self.new_model_name,
                                             monitor='val_loss',
                                             verbose=1,
                                             save_best_only=True,
