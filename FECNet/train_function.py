@@ -93,7 +93,7 @@ class Train:
         tensorboard_name = 'tensorboard -' + self.new_model_name[:-3]
         tensorboard = keras.callbacks.TensorBoard(log_dir=self.save_model_path + tensorboard_name, 
                                                 histogram_freq=0, 
-                                                batch_size=batch_size, 
+                                                batch_size=self.batch_size, 
                                                 write_graph=True, 
                                                 write_grads=True, 
                                                 write_images=True, 
