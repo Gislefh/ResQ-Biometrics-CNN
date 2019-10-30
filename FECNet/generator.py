@@ -442,7 +442,6 @@ class TripletFromOtherDataset:
         for i in range(index+1,len(self.image_list)):
 
             if self.image_list[i][1] == label and im1_bool == False:
-                if 
                 im1 = self.image_list[i][0]
                 im1_bool = True
 
