@@ -101,6 +101,9 @@ class TripletGenerator:
         for i in range(3):
             # load image
             im = cv2.imread(triplet[i])
+            
+            if not im:
+                break
 
             # if image is .jpg convert to rgb
             if triplet[i].split('.')[-1] == 'jpg':
