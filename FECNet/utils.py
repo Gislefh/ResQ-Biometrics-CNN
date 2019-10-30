@@ -71,6 +71,9 @@ def pca_FECNet(predictions, embedding_size, images, N_comp = 2):
 
     pca = PCA(n_components = N_comp)
     reduced_pred = pca.fit_transform(output_vec)
+    #plt.plot(reduced_pred[:,0], reduced_pred[:, 1], 'rx')
+    #plt.show()
+    #return None
 
     fig, ax = plt.subplots(1, 1)
     ax.set_xlim(np.amin(reduced_pred[:,0])-size, np.amax(reduced_pred[:,0])+size)

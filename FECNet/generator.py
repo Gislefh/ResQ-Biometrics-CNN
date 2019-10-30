@@ -16,7 +16,7 @@ class TripletGenerator:
         self.augment = augment                      # if True -> augment the data. else dont
         self.out_shape = out_shape                  # (x, y, challels)
         self.batch_size = batch_size                # batch size
-        self.data = data                            # Number of triplets
+        self.data = data                            # Number of triplets/3
         self.train_val_split = train_val_split      # Size of the validation set
 
         # Get Triplet Lists
@@ -33,9 +33,15 @@ class TripletGenerator:
         X3 = np.zeros((self.batch_size, self.out_shape[0], self.out_shape[1], self.out_shape[2]), dtype=np.float32)
         y = np.zeros((self.batch_size), dtype=np.float32)
 
+        if set == 'train':
+            paths = self.triplet_paths
+        elif set == 'val':
+            paths = self.triplet_paths_val
+
+
         while True:
-            shuffle(self.triplet_paths)
-            for i, triplet in enumerate(self.triplet_paths):
+            shuffle(paths)
+            for i, triplet in enumerate(paths):
                 tmp_list = self.__open_images(triplet)
 
                 X1[i%self.batch_size] = tmp_list[0]
@@ -53,12 +59,13 @@ class TripletGenerator:
             print('No data found')
         if set == 'train':
             return len(self.triplet_paths)
-        if set == 'val':
+        elif set == 'val':
             return len(self.triplet_paths_val)
+        else:
+            print('Choose either val or train')
 
     '''
     -  function assumes the names of the files are saved as: {row_in_cvs}_{image_nr_in_triplet}_{label}.(jpg/png...)
-
     saves triplets in self.triplet_paths as [path_to_im_1, ..2 , ..3, label]
     '''
     def __triplet_list(self): 
@@ -72,7 +79,7 @@ class TripletGenerator:
                     break
 
             # Save as val
-            if (np.random.rand() <= self.train_val_split) and (i%3 == 2):  ## NOTE the validation set will be random -> each time the flow 
+            if (np.random.rand() <= self.train_val_split) and (i%3 == 2):  ## NOTE the validation set will be random -> each time the class is initiated
                 label = (im_name.split('_')[-1]).split('.')[0]
                 self.triplet_paths_val.append([tmp_list[0], tmp_list[1], tmp_list[2], label])
                 tmp_list = []    

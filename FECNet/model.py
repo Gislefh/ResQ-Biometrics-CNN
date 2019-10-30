@@ -83,22 +83,27 @@ def FECNet_inceptionv3_model(input_shape, embedding_size):
     # import inceptionV3. TODO - remove last n layers to get the otput of the model to be block 4e 
     incV3 = InceptionV3(include_top=False, weights='imagenet', input_shape=input_shape, pooling='max')
 
-    #mixed8 is the end of the inception 4e block - used in FECNet
+    # mixed8 is the end of the inception 4e block - used in FECNet
     for i, layer in enumerate(incV3.layers):
         if layer.name == 'mixed8':
             layer_4e_index = i
+            break
+    
+    # freeze the first n layers
+    for i, layer in enumerate(incV3.layers):
+        layer.trainable = False
+        if layer.name == 'mixed6':
             break
 
     input_ = incV3.input
     x = incV3.layers[layer_4e_index].output
     
-    #TODO insert denseNet here
+    #TODO insert denseNet here and maybe freeze some layers at the bottom if inception
 
     x = GlobalMaxPooling2D()(x)
     x = Dense(512)(x)
     out = Dense(embedding_size)(x)
     image_embedder = Model(input_, out)
-
 
     image_1 = Input((input_shape[0], input_shape[1], input_shape[2]), name='im1')
     image_2 = Input((input_shape[0], input_shape[1], input_shape[2]), name='im2')
