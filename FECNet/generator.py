@@ -124,7 +124,7 @@ class TripletGenerator:
 
         return tmp_list
 
-    #TODO add augmentations
+    #TODO add more augmentations
     def __augment(self, image):
 
         # Rotate

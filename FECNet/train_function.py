@@ -91,7 +91,7 @@ class Train:
                                             period=1)
 
         tensorboard_name = 'tensorboard -' + self.new_model_name[:-3]
-        tensorboard = keras.callbacks.TensorBoard(log_dir=self.save_model_path + tensorboard_name, 
+        tensorboard = keras.callbacks.TensorBoard(log_dir=self.save_model_path + '/' + tensorboard_name, 
                                                 histogram_freq=0, 
                                                 batch_size=self.batch_size, 
                                                 write_graph=True, 
@@ -125,7 +125,7 @@ if __name__ == '__main__':
     delta_trip_loss = 0.1
     embedding_size = 16 # faceNet uses 128, FECNet uses 16.
     batch_size = 4
-    save_model_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\ResQ-Biometrics-CNN\\FECNet\\Models\\'
+    save_model_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\ResQ-Biometrics-CNN\\FECNet\\Models'
     new_model_name = 'FECNet_test5.h5'
 
     T = Train(data_path, save_model_path, new_model_name, image_shape, batch_size, delta_trip_loss,
