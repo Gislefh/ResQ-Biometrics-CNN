@@ -15,7 +15,7 @@ path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\FEC_dataset\\im
 out_shape = (128, 128, 3)
 delta_trip_loss = 0.1
 embedding_size = 16 # faceNet uses 128, FECNet uses 16.
-batch_size = 4
+batch_size = 16
 
 
 

@@ -71,7 +71,7 @@ class TripletGenerator:
     def __triplet_list(self): 
         tmp_list = []
         for i, im_name in enumerate(sorted(os.listdir(self.path))):
-            tmp_list.append(self.path + '\\' + im_name)
+            tmp_list.append(self.path + '/' + im_name)
 
             # Break if data_len is reached
             if self.data:
