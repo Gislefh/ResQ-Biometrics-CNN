@@ -296,6 +296,9 @@ class TripletFromOtherDataset:
     def get_labels(self):
         return self.labels
 
+    def get_data_len(self):
+        return len(self.image_list)
+
     def ret_with_label(self):
         X1 = np.zeros((1, self.image_shape[0], self.image_shape[1], self.image_shape[2]))
         X2 = np.zeros((1, self.image_shape[0], self.image_shape[1], self.image_shape[2]))
@@ -303,13 +306,18 @@ class TripletFromOtherDataset:
         Y = np.zeros((3))
         while True:
             for index, [im_path, label] in enumerate(self.image_list):
-                pass
                 
+                if index%3 == 0:
+                    X1[0] = self.__get_image(im_path)
+                    Y[index%3] = label
+                if index % 3 == 1:
+                    X2[0] = self.__get_image(im_path)
+                    Y[index%3] = label
+                if index % 3 == 2:
+                    X3[0] = self.__get_image(im_path)
+                    Y[index%3] = label    
 
-
-
-
-
+                    yield [X1, X2, X3], Y           
 
     def flow_from_dir(self):
         triplets = self.__find_triplets()
@@ -356,7 +364,7 @@ class TripletFromOtherDataset:
 
     def __get_image(self, path):
         im = cv2.imread(path)
-        if not im:
+        if not np.shape(im):
             print('-- FROM SELF -- No image found in given path')
             exit()
         
@@ -370,7 +378,7 @@ class TripletFromOtherDataset:
         if im.shape != self.image_shape:		
             factor_x = self.image_shape[0] / im.shape[0]
             factor_y = self.image_shape[1] / im.shape[1]
-            im = ndimage.zoom(im, (factor_x, factor_y, 1), order = 1)
+            im = zoom(im, (factor_x, factor_y, 1), order = 1)
         
         # Augment
         if self.augment:
@@ -390,7 +398,8 @@ class TripletFromOtherDataset:
             min_, max_ = 0.8, 1.1
             gamma = np.random.uniform(min_, max_)
             im = np.power(im, gamma)
-
+        
+        im = np.clip(im/255, 0, 1)
         return im
 
     def __find_triplets(self):
@@ -435,7 +444,6 @@ class TripletFromOtherDataset:
         shuffle(trip)
         return trip
 
-
     def __find_next(self, label, index):
         im1_bool = False
         im2_bool = False
@@ -461,8 +469,12 @@ class TripletFromOtherDataset:
 
 
 if __name__ == '__main__':
-    data_path = 'C:/Users/47450/Documents/ResQ Biometrics/Data sets/cat_dog/test_set/test_set'
+    data_path = 'C:/Users/47450/Documents/ResQ Biometrics/Data sets/ExpW/train'
     batch_size = 1
-    
-    T = TripletFromOtherDataset(data_path, batch_size, label_list = [], N_images_per_label = None)
-    T.flow_from_dir()
+    image_shape = (128,128,3)
+    T = TripletFromOtherDataset(data_path, batch_size, image_shape, label_list = [], augment = False, N_images_per_label = None)
+    gen = T.ret_with_label()
+    label_list = T.get_labels()
+    for [x1,x2,x3], y in gen:
+        plt.imshow(np.squeeze(x1))
+        plt.show()
