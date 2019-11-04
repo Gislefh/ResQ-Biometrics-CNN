@@ -12,9 +12,9 @@ class Train:
 
     def __init__(self, data_path, save_model_path, new_model_name, image_shape, batch_size, delta_trip_loss,
                     embedding_size=16, N_data_samples=None, model_type='FECNet',
-                    callback_list=[], augment_data = True, optimizer = 'adam'):
+                    callback_list=[], augment_data = True, optimizer = 'adam', train_val_spilt = 0.3):
         # Constants
-        self.data_path = data_path
+        self.data_path = data_path              
         self.save_model_path = save_model_path
         self.new_model_name = new_model_name
         self.image_shape = image_shape
@@ -27,17 +27,15 @@ class Train:
         self.callback_list = callback_list
         self.callbacks = []
         self.delta_trip_loss = delta_trip_loss
+        self.train_val_spilt = train_val_spilt
         
         # Tests
         if new_model_name in os.listdir(save_model_path):
-            print('--FROM SELF--: Model name exists. Change the model name')
-            exit()
+            raise Exception('--FROM SELF--: Model name exists. Change the model name')
         if (self.image_shape[0] < 100 or self.image_shape[1] < 100) and model_type != 'siamTest':
-            print('--FROM SELF--: Input images are too small')
-            exit()
+            raise Exception('--FROM SELF--: Input images are too small')
         if self.image_shape[2] != 3:
-            print('--FROM SELF--: Input images should have 3 channels')
-            exit()
+            raise Exception('--FROM SELF--: Input images should have 3 channels')
         
         # Functions
         self.__load_model()
@@ -58,7 +56,7 @@ class Train:
         
     
     def __create_generator(self):
-        trip_gen = TripletGenerator(self.data_path, out_shape = self.image_shape, batch_size=self.batch_size, augment=True, data = self.N_data_samples)
+        trip_gen = TripletGenerator(self.data_path, out_shape = self.image_shape, batch_size=self.batch_size, augment=True, data = self.N_data_sample, train_val_split=self.train_val_spilt)
         
         # Training 
         self.train_generator = trip_gen.flow_from_dir(set = 'train')
@@ -82,7 +80,7 @@ class Train:
                     optimizer=self.optimizer)
 
     def __callbacks(self):
-        save_best = keras.callbacks.ModelCheckpoint(self.save_model_path + self.new_model_name,
+        save_best = keras.callbacks.ModelCheckpoint(self.save_model_path + '/' + self.new_model_name,
                                             monitor='val_loss',
                                             verbose=1,
                                             save_best_only=True,
