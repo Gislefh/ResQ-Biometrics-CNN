@@ -56,7 +56,7 @@ class Train:
         
     
     def __create_generator(self):
-        trip_gen = TripletGenerator(self.data_path, out_shape = self.image_shape, batch_size=self.batch_size, augment=True, data = self.N_data_sample, train_val_split=self.train_val_spilt)
+        trip_gen = TripletGenerator(self.data_path, out_shape = self.image_shape, batch_size=self.batch_size, augment=True, data = self.N_data_samples, train_val_split=self.train_val_spilt)
         
         # Training 
         self.train_generator = trip_gen.flow_from_dir(set = 'train')
