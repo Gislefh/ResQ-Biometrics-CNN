@@ -1,7 +1,9 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
-class CustomMetrics:
+
+
+class CustomMetrics:  #TODO make it work 
 
     def __init__(self, embedding_size):
         self.embedding_size = embedding_size

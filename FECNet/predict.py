@@ -34,7 +34,7 @@ class Predict:
         # Create generator
         if self.generator_type == 'orig_FECNet':
             self.__generator_FEC()
-        elif self.generator_type == 'expw':
+        elif self.generator_type == 'expw':,
             self.__generator_expw()
         
     """
@@ -86,11 +86,12 @@ class Predict:
     DBSCAN:
         -args[0] = eps -    "The maximum distance between two samples for one to be considered 
                             as in the neighborhood of the other. This is not a maximum bound 
-                            on the distances of points within a cluster. (DEFAULT: 0.5)"
+                            on the distances of points within a cluster. (DEFAULT: 0.5 but should probably be similar to delta_trip_loss)"
         -args[1] = min_samples  - "The number of samples (or total weight) in a neighborhood 
                                     for a point to be considered as a core point (DEAFULT: 5)"
     """
-    def cluster(self, method = 'K-means', args = [], N_comp = 2):
+    def cluster(self, method = 'K-means', args = []):
+        # Clustering
         pred_list, im_list, label_list = self.__image_pred_label_list()
         if method == 'K-means':
             K = KMeans(n_clusters=args[0])
@@ -98,14 +99,25 @@ class Predict:
         elif method  == 'DBSCAN':
             C = DBSCAN(eps = args[0], min_samples = args[1])
             cluster_pred = C.fit_predict(pred_list)
+        else:
+            raise Exception('-- FROM SELF -- Choose from list of clustering algorithms')
 
-        pca = PCA(n_components = N_comp)
+        ## 2D
+        pca = PCA(n_components = 2)
         reduced_pred = pca.fit_transform(pred_list)
 
         if self.generator_type == 'expw':
             self.__plot_2d_label_frame(im_list, reduced_pred, label_list)
         
         self.__plot_2d_label_frame(im_list, reduced_pred, cluster_pred)
+
+        ## 3D 
+        pca = PCA(n_components = 3)
+        reduced_pred = pca.fit_transform(pred_list)
+        self.__plot_3d(reduced_pred, label_list)
+        self.__plot_3d(reduced_pred, cluster_pred)   
+             
+        # Show all
         plt.show()
  
 
@@ -173,6 +185,8 @@ class Predict:
         n_clusters = len(np.unique(cluster_pred))
         label_colors = []
         for i in range(len(image)):
+            if cluster_pred[i] == -1:
+                label_colors.append([0,0,0,1])
             cmap = plt.cm.Spectral(cluster_pred[i] / n_clusters)
             label_colors.append(cmap)    
 
@@ -183,16 +197,28 @@ class Predict:
             rect = patches.Rectangle((extent[0],extent[2]), size*2, size*2, linewidth=4, edgecolor=label_colors[i],facecolor=label_colors[i], fill=False)
             ax.add_patch(rect)
 
-        #plt.show()
+    def __plot_3d(self, input_vec, cluster_pred):
+        n_clusters = len(np.unique(cluster_pred))
+        label_colors = []
+        for i in range(len(input_vec)):
+            if cluster_pred[i] == -1:
+                label_colors.append([0,0,0,1])
+            cmap = plt.cm.Spectral(cluster_pred[i] / n_clusters)
+            label_colors.append(cmap) 
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.scatter(xs =input_vec[:, 0], ys = input_vec[:, 1], zs = input_vec[:, 2], zdir='z', s=20, c=label_colors)
+
 
 if __name__ == "__main__":
-    data_path = 'C:/Users/47450/Documents/ResQ Biometrics/Data sets/FEC_dataset/images/two-class_triplets'
+    data_path = 'C:/Users/47450/Documents/ResQ Biometrics/Data sets/ExpW/train'
     model_weight_path = 'Models/FECNet_test6.h5'
     image_shape = (128, 128, 3)
-    P = Predict(data_path, model_weight_path, image_shape=image_shape, N_data_samples=500, generator_type='orig_FECNet')
+    P = Predict(data_path, model_weight_path, image_shape=image_shape, N_data_samples=120, generator_type='expw')
     #P.eval_gen()
     #P.pca(N_comp = 2)
-    P.cluster(method = 'K-means', N_clusters = 10, N_comp = 2)
+    P.cluster(method = 'K-means', args = [12])
 
 
 

@@ -54,8 +54,8 @@ class TripletGenerator:
                 y[i%self.batch_size] = int(triplet[-1])
 
                 if i%self.batch_size == self.batch_size -1:
-                    X = [X1, X2, X3]
-                    yield X, y
+                    #X = [X1, X2, X3]
+                    yield [X1, X2, X3], y
 
 
     def get_data_len(self, set = 'train'):

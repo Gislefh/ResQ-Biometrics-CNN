@@ -12,7 +12,8 @@ class Train:
 
     def __init__(self, data_path, save_model_path, new_model_name, image_shape, batch_size, delta_trip_loss,
                     embedding_size=16, N_data_samples=None, model_type='FECNet',
-                    callback_list=[], augment_data = True, optimizer = 'adam', train_val_spilt = 0.3):
+                    callback_list=[], augment_data = True, optimizer = 'adam', train_val_spilt = 0.3,
+                    load_weights = None):
         # Constants
         self.data_path = data_path              
         self.save_model_path = save_model_path
@@ -28,6 +29,7 @@ class Train:
         self.callbacks = []
         self.delta_trip_loss = delta_trip_loss
         self.train_val_spilt = train_val_spilt
+        self.load_weights = load_weights  #None or path to weights
         
         # Tests
         if new_model_name in os.listdir(save_model_path):
@@ -45,6 +47,8 @@ class Train:
 
         
 
+        
+
     def __load_model(self):
         if self.model_type == 'FECNet':
             self.model = FECNet_inceptionv3_model(input_shape=self.image_shape, embedding_size=self.embedding_size) 
@@ -52,6 +56,11 @@ class Train:
             self.model = faceNet_inceptionv3_model(input_shape=self.image_shape, embedding_size=self.embedding_size)
         elif self.model_type == 'siamTest':
             self.model = test_siam_model(input_shape=self.image_shape, embedding_size=self.embedding_size)
+        
+        # Load Weights
+        if self.load_weights:
+            self.model.load_weights(self.load_weights)
+            
         self.model.summary()
         
     
@@ -80,7 +89,7 @@ class Train:
                     optimizer=self.optimizer)
 
     def __callbacks(self):
-        save_best = keras.callbacks.ModelCheckpoint(self.save_model_path + '/' + self.new_model_name,
+        save_best = keras.callbacks.ModelCheckpoint(self.save_model_path + self.new_model_name,
                                             monitor='val_loss',
                                             verbose=1,
                                             save_best_only=True,
@@ -88,13 +97,13 @@ class Train:
                                             mode='min',
                                             period=1)
 
-        tensorboard_name = 'tensorboard -' + self.new_model_name[:-3]
-        tensorboard = keras.callbacks.TensorBoard(log_dir=self.save_model_path + '/' + tensorboard_name, 
+        tensorboard_name = 'tensorboard_' + self.new_model_name[:-3]
+        tensorboard = keras.callbacks.TensorBoard(log_dir=self.save_model_path + tensorboard_name, 
                                                 histogram_freq=0, 
                                                 batch_size=self.batch_size, 
                                                 write_graph=True, 
                                                 write_grads=True, 
-                                                write_images=True, 
+                                                write_images=False, 
                                                 embeddings_freq=0, 
                                                 embeddings_layer_names=None, 
                                                 embeddings_metadata=None, 
@@ -116,7 +125,7 @@ class Train:
                                     epochs=200, shuffle=False, callbacks=self.callbacks)
 
 
-
+'''
 if __name__ == '__main__':
     data_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\FEC_dataset\\images\\two-class_triplets'
     image_shape = (128, 128, 3)
@@ -129,5 +138,27 @@ if __name__ == '__main__':
     T = Train(data_path, save_model_path, new_model_name, image_shape, batch_size, delta_trip_loss,
                     embedding_size=16, N_data_samples=30000, model_type='FECNet',
                     callback_list=['tensorboard', 'save_best'], augment_data = True, optimizer = 'adam')
+
+    T.fit()
+
+'''
+
+
+if __name__ == '__main__':
+
+    data_path = 'C:/Users/47450/Documents/ResQ Biometrics/Data sets/FEC_dataset/images/two-class_triplets'
+    image_shape = (128, 128, 3)
+    delta_trip_loss = 0.2
+    embedding_size = 16 # faceNet uses 128, FECNet uses 16.
+    batch_size = 8
+    val_size = 0.05
+    save_model_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\ResQ-Biometrics-CNN\\FECNet\\Models\\'
+    new_model_name = 'FECNet_1_2.h5'
+    load_weights = 'C:/Users/47450/Documents/ResQ Biometrics/ResQ-Biometrics-CNN/FECNet/Models/FECNet_1.h5'
+
+    T = Train(data_path, save_model_path, new_model_name, image_shape, batch_size, delta_trip_loss,
+                    embedding_size=16, N_data_samples=None, model_type='FECNet',
+                    callback_list=['tensorboard', 'save_best'], augment_data = True, optimizer = 'adam',
+                    train_val_spilt=val_size, load_weights=load_weights)
 
     T.fit()

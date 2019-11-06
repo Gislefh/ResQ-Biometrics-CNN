@@ -11,7 +11,7 @@ import keras
 import os
 
 
-path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\FEC_dataset\\images\\two-class_triplets'
+data_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\FEC_dataset\\images\\two-class_triplets'
 out_shape = (128, 128, 3)
 delta_trip_loss = 0.1
 embedding_size = 16 # faceNet uses 128, FECNet uses 16.
@@ -20,13 +20,12 @@ batch_size = 16
 
 
 # Data Generator 
-trip_gen = TripletGenerator(path, out_shape = out_shape, batch_size=batch_size, augment=True, data = 30000)
+trip_gen = TripletGenerator(data_path, out_shape = out_shape, batch_size=batch_size, augment=True, data = None, train_val_split=0.05)
 gen = trip_gen.flow_from_dir(set = 'train')
 data_len = trip_gen.get_data_len(set = 'train')
 
 val_gen = trip_gen.flow_from_dir(set = 'val')
 val_data_len = trip_gen.get_data_len(set = 'val')
-
 
 
 # Model
@@ -46,10 +45,10 @@ model.compile(loss=L.trip_loss,
 
 # callbacks
 save_model_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\ResQ-Biometrics-CNN\\FECNet\\Models\\'
-new_model_name = 'FECNet_test4.h5'
+new_model_name = 'FECNet_test6.h5'
 if new_model_name in os.listdir(save_model_path):
     print('--FROM SELF--: Model name exists. Change the model name')
-    #exit()
+    exit()
 
 save_best = keras.callbacks.ModelCheckpoint(save_model_path + new_model_name,
                                             monitor='val_loss',
