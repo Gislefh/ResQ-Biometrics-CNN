@@ -44,7 +44,8 @@ def face_from_web_gen(path, out_shape=(224, 224), start_row=0, trip_type = 'TWO_
 
                 url = row[row_inc * 5]
 
-                image = cv2.imdecode(np.frombuffer(requests.get(url).content, np.uint8), -1)
+                im = np.frombuffer(requests.get(url).content, np.uint8)
+                image = cv2.imdecode(im, -1)
 
                 if len(np.shape(image)) != 3:
                     pass_ = True
@@ -73,9 +74,9 @@ def face_from_web_gen(path, out_shape=(224, 224), start_row=0, trip_type = 'TWO_
 
 
 if __name__ == '__main__':
-    save_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\FEC_dataset\\images\\two-class_triplets\\'
+    save_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\FEC_dataset\\images\\one-class_triplets\\'
     path_to_csv = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\FEC_dataset\\faceexp-comparison-data-train-public.csv'
-    for image1, image2, image3, triplet_type, row_nr, label in face_from_web_gen(path_to_csv, start_row=1714):
+    for image1, image2, image3, triplet_type, row_nr, label in face_from_web_gen(path_to_csv, start_row=20339, trip_type='ONE_CLASS_TRIPLET'):
         cv2.imwrite(save_path+'{}_{}_{}.jpg'.format(row_nr, '1', label), image1)
         cv2.imwrite(save_path+'{}_{}_{}.jpg'.format(row_nr, '2', label), image2)
         cv2.imwrite(save_path+'{}_{}_{}.jpg'.format(row_nr, '3', label), image3)
