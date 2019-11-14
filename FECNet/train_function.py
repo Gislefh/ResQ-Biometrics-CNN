@@ -13,7 +13,7 @@ class Train:
     def __init__(self, data_path, save_model_path, new_model_name, image_shape, batch_size, delta_trip_loss,
                     embedding_size=16, N_data_samples=None, model_type='FECNet',
                     callback_list=[], augment_data = True, optimizer = 'adam', train_val_spilt = 0.3,
-                    load_weights = None):
+                    load_weights = None, import_model = None, dir_or_mem = 'dir'):
         # Constants
         self.data_path = data_path              
         self.save_model_path = save_model_path
@@ -40,7 +40,10 @@ class Train:
             raise Exception('--FROM SELF--: Input images should have 3 channels')
         
         # Functions
-        self.__load_model()
+        if import_model:
+            self.model = import_model
+        else:
+            self.__load_model()
         self.__create_generator()
         self.__custom_loss_and_metrics()
         self.__callbacks()
@@ -56,6 +59,8 @@ class Train:
             self.model = faceNet_inceptionv3_model(input_shape=self.image_shape, embedding_size=self.embedding_size)
         elif self.model_type == 'siamTest':
             self.model = test_siam_model(input_shape=self.image_shape, embedding_size=self.embedding_size)
+        elif self.model = 'FECNet_dense':
+            
         
         # Load Weights
         if self.load_weights:
