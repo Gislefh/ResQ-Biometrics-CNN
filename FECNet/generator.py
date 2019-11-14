@@ -4,6 +4,8 @@ import cv2
 import matplotlib.pyplot as plt
 from random import shuffle
 from scipy.ndimage import rotate, zoom
+from pytictoc import TicToc
+from tqdm import tqdm
 
 
 class TripletGenerator:
@@ -56,6 +58,44 @@ class TripletGenerator:
                 if i%self.batch_size == self.batch_size -1:
                     #X = [X1, X2, X3]
                     yield [X1, X2, X3], y
+
+    def flow_from_mem(self, set='train'):
+        if not self.triplet_paths:
+            print('No data found')
+            return None
+
+        X1 = np.zeros((self.batch_size, self.out_shape[0], self.out_shape[1], self.out_shape[2]), dtype=np.float32)
+        X2 = np.zeros((self.batch_size, self.out_shape[0], self.out_shape[1], self.out_shape[2]), dtype=np.float32)
+        X3 = np.zeros((self.batch_size, self.out_shape[0], self.out_shape[1], self.out_shape[2]), dtype=np.float32)
+        y = np.zeros((self.batch_size), dtype=np.float32)
+
+        if set == 'train':
+            paths = self.triplet_paths
+        elif set == 'val':
+            paths = self.triplet_paths_val
+        
+        tot_list = []
+        for triplet in tqdm(paths):
+            im_trip = self.__open_images(triplet)
+            tot_list.append([im_trip[0], im_trip[1], im_trip[2], triplet[-1]])
+        
+        while True:
+            shuffle(tot_list)
+            for i, triplet in enumerate(tot_list):
+                #tmp_list = self.__open_images(triplet)
+
+                X1[i%self.batch_size] = triplet[0]
+                X2[i%self.batch_size] = triplet[1]
+                X3[i%self.batch_size] = triplet[2]
+                y[i%self.batch_size] = int(triplet[-1])
+
+                if i%self.batch_size == self.batch_size -1:
+                    yield [X1, X2, X3], y        
+        
+
+
+            
+
 
 
     def get_data_len(self, set = 'train'):
@@ -469,12 +509,16 @@ class TripletFromOtherDataset:
 
 
 if __name__ == '__main__':
-    data_path = 'C:/Users/47450/Documents/ResQ Biometrics/Data sets/ExpW/train'
-    batch_size = 1
+    data_path = 'C:/Users/47450/Documents/ResQ Biometrics/Data sets/FEC_dataset/images/two-class_triplets'
+    batch_size = 32
     image_shape = (128,128,3)
-    T = TripletFromOtherDataset(data_path, batch_size, image_shape, label_list = [], augment = False, N_images_per_label = None)
-    gen = T.ret_with_label()
-    label_list = T.get_labels()
-    for [x1,x2,x3], y in gen:
-        plt.imshow(np.squeeze(x1))
-        plt.show()
+    T = TripletGenerator(data_path, image_shape, batch_size, augment = True, data = 1000)
+    gen = T.flow_from_dir()
+    
+    t = TicToc() #create instance of class
+    t.tic()
+    for i, ([x1,x2,x3], y) in enumerate(gen):
+        print(i)
+        if i > 10:
+            break
+    t.toc()
