@@ -1,5 +1,5 @@
 from generator import TripletGenerator
-from model import faceNet_inceptionv3_model, test_siam_model, FECNet_inceptionv3_model
+from model import faceNet_inceptionv3_model, test_siam_model, FECNet_inceptionv3_model, FECNet_inceptionv3_dense_model
 from custom_loss import TripletLoss
 from custom_metrics import CustomMetrics
 import numpy as np
@@ -30,6 +30,7 @@ class Train:
         self.delta_trip_loss = delta_trip_loss
         self.train_val_spilt = train_val_spilt
         self.load_weights = load_weights  #None or path to weights
+        self.dir_or_mem = dir_or_mem # flow from dir ( 'dir' ) or from memory ('mem') 
         
         # Tests
         if new_model_name in os.listdir(save_model_path):
@@ -48,9 +49,7 @@ class Train:
         self.__custom_loss_and_metrics()
         self.__callbacks()
 
-        
-
-        
+            
 
     def __load_model(self):
         if self.model_type == 'FECNet':
@@ -60,6 +59,8 @@ class Train:
         elif self.model_type == 'siamTest':
             self.model = test_siam_model(input_shape=self.image_shape, embedding_size=self.embedding_size)
         elif self.model = 'FECNet_dense':
+            self.model = FECNet_inceptionv3_dense_model(input_shape=self.image_shape, embedding_size=self.embedding_size)
+
             
         
         # Load Weights
@@ -70,16 +71,25 @@ class Train:
         
     
     def __create_generator(self):
+        
         trip_gen = TripletGenerator(self.data_path, out_shape = self.image_shape, batch_size=self.batch_size, augment=True, data = self.N_data_samples, train_val_split=self.train_val_spilt)
         
-        # Training 
-        self.train_generator = trip_gen.flow_from_dir(set = 'train')
-        self.data_len_train = trip_gen.get_data_len(set = 'train')
+        if self.dir_or_mem == 'dir':
+            # Training 
+            self.train_generator = trip_gen.flow_from_dir(set = 'train')
+            self.data_len_train = trip_gen.get_data_len(set = 'train')
+            # Validation
+            self.val_generator = trip_gen.flow_from_dir(set = 'val')
+            self.data_len_val = trip_gen.get_data_len(set = 'val')
 
-        # Validation
-        self.val_generator = trip_gen.flow_from_dir(set = 'val')
-        self.data_len_val = trip_gen.get_data_len(set = 'val')
-
+        elif self.dir_or_mem == 'mem':
+            # Training 
+            self.train_generator = trip_gen.flow_from_mem(set = 'train')
+            self.data_len_train = trip_gen.get_data_len(set = 'train')
+            # Validation
+            self.val_generator = trip_gen.flow_from_mem(set = 'val')
+            self.data_len_val = trip_gen.get_data_len(set = 'val')
+            
 
     def __custom_loss_and_metrics(self):
         # Custom loss
@@ -157,13 +167,14 @@ if __name__ == '__main__':
     embedding_size = 16 # faceNet uses 128, FECNet uses 16.
     batch_size = 8
     val_size = 0.05
+    data_samples = 4000
     save_model_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\ResQ-Biometrics-CNN\\FECNet\\Models\\'
-    new_model_name = 'FECNet_1_2.h5'
+    new_model_name = 'FECNet_1_3.h5'
     load_weights = 'C:/Users/47450/Documents/ResQ Biometrics/ResQ-Biometrics-CNN/FECNet/Models/FECNet_1.h5'
 
     T = Train(data_path, save_model_path, new_model_name, image_shape, batch_size, delta_trip_loss,
-                    embedding_size=16, N_data_samples=None, model_type='FECNet',
+                    embedding_size=16, N_data_samples=data_samples, model_type='FECNet',
                     callback_list=['tensorboard', 'save_best'], augment_data = True, optimizer = 'adam',
-                    train_val_spilt=val_size, load_weights=load_weights)
+                    train_val_spilt=val_size, load_weights=load_weights, dir_or_mem='mem')
 
     T.fit()
