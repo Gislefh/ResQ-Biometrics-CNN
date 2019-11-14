@@ -77,7 +77,7 @@ class TripletGenerator:
         tot_list = []
         for triplet in tqdm(paths):
             im_trip = self.__open_images(triplet)
-            tot_list.append([im_trip[0], im_trip[1], im_trip[2], triplet[-1]])
+            tot_list.append([np.uint8(im_trip[0]), np.uint8(im_trip[1]), np.uint8(im_trip[2]), np.uint8(triplet[-1])])
         
         while True:
             shuffle(tot_list)
