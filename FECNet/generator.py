@@ -4,7 +4,7 @@ import cv2
 import matplotlib.pyplot as plt
 from random import shuffle
 from scipy.ndimage import rotate, zoom
-from pytictoc import TicToc
+
 from tqdm import tqdm
 
 
@@ -63,6 +63,11 @@ class TripletGenerator:
         if not self.triplet_paths:
             print('No data found')
             return None
+        if self.augment: 
+            self.augment = False
+            tmp_aug = True
+        else:
+            tmp_aug = False
 
         X1 = np.zeros((self.batch_size, self.out_shape[0], self.out_shape[1], self.out_shape[2]), dtype=np.float32)
         X2 = np.zeros((self.batch_size, self.out_shape[0], self.out_shape[1], self.out_shape[2]), dtype=np.float32)
@@ -78,15 +83,19 @@ class TripletGenerator:
         for triplet in tqdm(paths):
             im_trip = self.__open_images(triplet)
             tot_list.append([np.uint8(im_trip[0]), np.uint8(im_trip[1]), np.uint8(im_trip[2]), np.uint8(triplet[-1])])
-        
+        t.tic()
         while True:
             shuffle(tot_list)
             for i, triplet in enumerate(tot_list):
-                #tmp_list = self.__open_images(triplet)
+                if tmp_aug:
+                    X1[i%self.batch_size] = self.__augment(triplet[0])
+                    X2[i%self.batch_size] = self.__augment(triplet[1])
+                    X3[i%self.batch_size] = self.__augment(triplet[2])
+                else:
+                    X1[i%self.batch_size] = triplet[0]
+                    X2[i%self.batch_size] = triplet[1]
+                    X3[i%self.batch_size] = triplet[2]
 
-                X1[i%self.batch_size] = triplet[0]
-                X2[i%self.batch_size] = triplet[1]
-                X3[i%self.batch_size] = triplet[2]
                 y[i%self.batch_size] = int(triplet[-1])
 
                 if i%self.batch_size == self.batch_size -1:
@@ -509,14 +518,15 @@ class TripletFromOtherDataset:
 
 
 if __name__ == '__main__':
+    from pytictoc import TicToc
     data_path = 'C:/Users/47450/Documents/ResQ Biometrics/Data sets/FEC_dataset/images/two-class_triplets'
     batch_size = 32
     image_shape = (128,128,3)
     T = TripletGenerator(data_path, image_shape, batch_size, augment = True, data = 1000)
-    gen = T.flow_from_dir()
+    gen = T.flow_from_mem()
     
     t = TicToc() #create instance of class
-    t.tic()
+    
     for i, ([x1,x2,x3], y) in enumerate(gen):
         print(i)
         if i > 10:
