@@ -83,7 +83,7 @@ class TripletGenerator:
         for triplet in tqdm(paths):
             im_trip = self.__open_images(triplet)
             tot_list.append([np.uint8(im_trip[0]), np.uint8(im_trip[1]), np.uint8(im_trip[2]), np.uint8(triplet[-1])])
-        
+
         while True:
             shuffle(tot_list)
             for i, triplet in enumerate(tot_list):
@@ -183,6 +183,7 @@ class TripletGenerator:
     def __augment(self, image):
         if image.dtype == 'uint8':
             image = np.float32(image)
+            
         # Rotate - rotates +- n deg
         n = 30
         ang = np.random.rand() * n 
