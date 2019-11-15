@@ -58,10 +58,11 @@ class Train:
             self.model = faceNet_inceptionv3_model(input_shape=self.image_shape, embedding_size=self.embedding_size)
         elif self.model_type == 'siamTest':
             self.model = test_siam_model(input_shape=self.image_shape, embedding_size=self.embedding_size)
-        elif self.model == 'FECNet_dense':
+        elif self.model_type == 'FECNet_dense':
             self.model = FECNet_inceptionv3_dense_model(input_shape=self.image_shape, embedding_size=self.embedding_size)
 
-            
+        else:
+            raise Exception('--FROM SELF--: No model type selected')
         
         # Load Weights
         if self.load_weights:
