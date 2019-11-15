@@ -128,7 +128,7 @@ def FECNet_inceptionv3_model(input_shape, embedding_size):
 def FECNet_inceptionv3_dense_model(input_shape, embedding_size):
     # Inceptionv3
     incV3 = InceptionV3(include_top=False, weights='imagenet', input_shape=input_shape, pooling='max')
-    
+
     # Freeze the first n layers
     for i, layer in enumerate(incV3.layers):
         layer.trainable = False
@@ -194,8 +194,8 @@ def FECNet_inceptionv3_dense_model(input_shape, embedding_size):
     x = Dense(512)(x)
     out = Dense(embedding_size)(x)
     image_embedder = Model(input_, out)
-    image_embedder.summary()
-    exit()
+
+ 
 
     image_1 = Input((input_shape[0], input_shape[1], input_shape[2]), name='im1')
     image_2 = Input((input_shape[0], input_shape[1], input_shape[2]), name='im2')
