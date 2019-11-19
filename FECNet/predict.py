@@ -1,7 +1,7 @@
 import tensorflow as tf 
 from generator import TripletGenerator, TripletFromOtherDataset
-from model import FECNet_inceptionv3_model
-from utils import distances, eval_gen
+from model import FECNet_inceptionv3_model, FECNet_inceptionv3_dense_model
+from utils import Distances, eval_gen
 import numpy as np
 import matplotlib.pyplot as plt
 from custom_loss import TripletLoss
@@ -9,11 +9,13 @@ from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans, DBSCAN
 import cv2
 from matplotlib import patches
-
+from scipy.spatial import distance
 class Predict:
 
     """
     Predicts on FECNet models
+
+    generator_type: 'orig_FECNet' or 'expw'. orig_FECNet asumes that all the images are stored in one folder, while expw assumes that the images are stroed in there repectve labeled folder 
     """
 
     def __init__(self, data_path, model_weight_path, N_data_samples = None, image_shape = None, model_type = 'FECNet', batch_size = 1, generator_type = 'orig_FECNet', label_list = []):
@@ -25,16 +27,21 @@ class Predict:
         self.batch_size = batch_size  # should be 1 or it will crash atm
         self.label_list = label_list
         self.generator_type = generator_type
+
         # Load Model
         if model_type == 'FECNet':
             self.embedding_size = 16
             self.model = FECNet_inceptionv3_model(input_shape = self.image_shape, embedding_size = self.embedding_size)
             self.model.load_weights(self.model_weight_path)
-        
+        elif model_type == 'FECNet_dense':
+            self.embedding_size = 16
+            self.model = FECNet_inceptionv3_dense_model(input_shape = self.image_shape, embedding_size = self.embedding_size)
+            self.model.load_weights(self.model_weight_path)
+
         # Create generator
         if self.generator_type == 'orig_FECNet':
             self.__generator_FEC()
-        elif self.generator_type == 'expw':,
+        elif self.generator_type == 'expw':
             self.__generator_expw()
         
     """
@@ -59,7 +66,7 @@ class Predict:
             cnt +=1
             print('predicted on ', cnt, '/ ', self.data_len, ' samples')
             pred = self.model.predict(x, batch_size = 1, steps = 1)
-            d1, d2, d3 = distances(np.squeeze(pred), self.embedding_size)
+            d1, d2, d3 = Distances(np.squeeze(pred), self.embedding_size)
             if d1 < d2 and d1 < d3:
                 gt = 3
             elif d2 < d1 and d2 < d3:
@@ -119,13 +126,90 @@ class Predict:
              
         # Show all
         plt.show()
- 
+    
+    #guess it will be slow, at least for seach_space_len with large values
+    def query_for_sim_expressions(self, image, seach_space_len = 3000, N_images_to_show = 10):
+
+        #cnt = 0
+        for cnt, (x, y) in enumerate(self.generator):
+            '''
+            plt.figure(1)
+            plt.imshow(np.squeeze(x[0]))
+            plt.figure(2)
+            plt.imshow(np.squeeze(x[1]))
+            plt.figure(3)
+            plt.imshow(np.squeeze(x[2]))
+            plt.show()
+            '''
+            # Init
+            if (cnt == 0) and (image == None):
+                image_w_extra_dim = x[0].copy()
+                im = image_w_extra_dim[0]
+
+                # Find predicted value of image
+                image_plus_zeros = [image_w_extra_dim, np.zeros(image_w_extra_dim.shape), np.zeros(image_w_extra_dim.shape)]
+                im_pred = self.model.predict(image_plus_zeros, batch_size = 1, steps = 1)[0, 0:self.embedding_size]
+                
+                best_im = np.zeros((N_images_to_show, im.shape[0], im.shape[1], im.shape[2]))
+                best_dist = [np.inf] * N_images_to_show
+                continue
+
+            print(cnt)
+
+            for i in range(3):
+                if np.array_equal(x[i], image_w_extra_dim):
+                    x[i] = np.zeros(image_w_extra_dim.shape)
+                  
+            for j in range(N_images_to_show): #slow?
+                for k in range(3):
+                    if np.array_equal(best_im[j], np.squeeze(x[k])):
+                        x[k] = np.zeros(image_w_extra_dim.shape)
+
+
+            pred = np.squeeze(self.model.predict(x, batch_size = 1, steps = 1))
+
+            for i in range(3):
+                
+                d = pred[i*16: (i*16)+16]
+                dist = distance.euclidean(im_pred, d)
+
+                for j in range(N_images_to_show):
+                    if dist < best_dist[j]:
+                        best_dist[j] = dist
+                        best_im[j] = np.squeeze(x[i].copy())
+                        break
+            
+            if cnt >= seach_space_len:
+                break
+
+        # Plots
+        result = np.append(best_im[0], best_im[1], axis = 1)  
+        result_dist = [1- best_dist[0], 1- best_dist[1]]
+        for i in range(2, N_images_to_show):
+            result = np.append(result, best_im[i], axis = 1)
+            result_dist.append(1-best_dist[i])
+        print(result_dist)
+        plt.figure(1)
+        plt.subplot(2,2,1)
+        plt.imshow(im)
+        plt.subplot(2,2,2)
+        plt.imshow(result)
+        plt.subplot(2,2,4)
+        plt.plot(list(range(len(result_dist))), result_dist, 'b|-')
+        plt.ylabel('Similarity')
+        plt.grid()
+        plt.show()
+            
+        
+
+
 
       
     def __generator_FEC(self):
-        trip_gen = TripletGenerator(self.data_path, out_shape = self.image_shape, batch_size=self.batch_size, augment=False, data=self.N_data_samples, train_val_split = 0.0)
-        self.generator = trip_gen.flow_from_dir()
-        self.data_len =  trip_gen.get_data_len()
+        trip_gen = TripletGenerator(self.data_path, out_shape = self.image_shape, batch_size=self.batch_size, augment=False, data=self.N_data_samples, train_val_split = 0.05)
+        self.generator = trip_gen.flow_from_dir(set = 'train')
+        self.data_len =  trip_gen.get_data_len(set = 'train')
+
 
     def __generator_expw(self):
         if self.label_list:
@@ -212,13 +296,24 @@ class Predict:
 
 
 if __name__ == "__main__":
-    data_path = 'C:/Users/47450/Documents/ResQ Biometrics/Data sets/ExpW/train'
-    model_weight_path = 'Models/FECNet_test6.h5'
-    image_shape = (128, 128, 3)
-    P = Predict(data_path, model_weight_path, image_shape=image_shape, N_data_samples=120, generator_type='expw')
+
+    # Make GPU invis to tf
+    #import os 
+    #os.environ["CUDA_VISIBLE_DEVICES"]="-1"    
+    #import tensorflow as tf 
+
+    # Data
+    #data_path = 'C:/Users/47450/Documents/ResQ Biometrics/Data sets/ExpW/train' # ExpW
+    #data_path = 'C:/Users/47450/Documents/ResQ Biometrics/Data sets/ExpW/test' # fecnet data
+    data_path = 'C:/Users/47450/Documents/ResQ Biometrics/Data sets/FEC_dataset/images/two-class_triplets'
+    # Model
+    model_weight_path = 'Models/FECNet_dense_1.h5'
+    image_shape = (224, 224, 3)
+    P = Predict(data_path, model_weight_path, image_shape=image_shape, N_data_samples=30000, generator_type='orig_FECNet', model_type='FECNet_dense')
     #P.eval_gen()
     #P.pca(N_comp = 2)
-    P.cluster(method = 'K-means', args = [12])
+    #P.cluster(method = 'K-means', args = [12])
+    P.query_for_sim_expressions(None)
 
 
 
