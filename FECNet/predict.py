@@ -5,11 +5,20 @@ from utils import Distances, eval_gen
 import numpy as np
 import matplotlib.pyplot as plt
 from custom_loss import TripletLoss
-from sklearn.decomposition import PCA
-from sklearn.cluster import KMeans, DBSCAN
+from sklearn.decomposition import PCA, KernelPCA
+from sklearn.cluster import KMeans, DBSCAN, AffinityPropagation
 import cv2
 from matplotlib import patches
 from scipy.spatial import distance
+from scipy import ndimage
+
+#pred_from_cam stuff
+from imutils.video import VideoStream
+import os
+import dlib
+
+
+
 class Predict:
 
     """
@@ -53,7 +62,18 @@ class Predict:
         reduced_pred = pca.fit_transform(pred)
         if N_comp == 2:
             self.__plot_2d(im, reduced_pred)
- 
+
+    '''
+    Kernel PCA - a non-linear dimentionality reduction
+    '''
+
+    def KPCA(self, N_comp = 2):
+        pred, im = self.__image_pred_list()
+        kpca = KernelPCA(n_components = N_comp)
+        reduced_pred = kpca.fit_transform(pred)
+        if N_comp == 2:
+            self.__plot_2d(im, reduced_pred)
+
 
     """
     Prints out the accuracy of the model. 
@@ -97,7 +117,7 @@ class Predict:
         -args[1] = min_samples  - "The number of samples (or total weight) in a neighborhood 
                                     for a point to be considered as a core point (DEAFULT: 5)"
     """
-    def cluster(self, method = 'K-means', args = []):
+    def cluster(self, method = 'K-means', args = [], pca_kpca = 'pca'):
         # Clustering
         pred_list, im_list, label_list = self.__image_pred_label_list()
         if method == 'K-means':
@@ -106,61 +126,66 @@ class Predict:
         elif method  == 'DBSCAN':
             C = DBSCAN(eps = args[0], min_samples = args[1])
             cluster_pred = C.fit_predict(pred_list)
+        elif method == 'AffinityPropagation':
+            C = AffinityPropagation()
+            cluster_pred = C.fit_predict(pred_list)
         else:
             raise Exception('-- FROM SELF -- Choose from list of clustering algorithms')
 
         ## 2D
-        pca = PCA(n_components = 2)
-        reduced_pred = pca.fit_transform(pred_list)
+        if pca_kpca == 'pca':
+            pca = PCA(n_components = 2)
+            reduced_pred = pca.fit_transform(pred_list)
+        elif pca_kpca == 'kpca':
+            kpca = KernelPCA(n_components = 2)
+            reduced_pred = kpca.fit_transform(pred_list)
 
         if self.generator_type == 'expw':
             self.__plot_2d_label_frame(im_list, reduced_pred, label_list)
         
         self.__plot_2d_label_frame(im_list, reduced_pred, cluster_pred)
 
-        ## 3D 
-        pca = PCA(n_components = 3)
-        reduced_pred = pca.fit_transform(pred_list)
-        self.__plot_3d(reduced_pred, label_list)
-        self.__plot_3d(reduced_pred, cluster_pred)   
+        ## 3D - not yet
+        #pca = PCA(n_components = 3)
+        #reduced_pred = pca.fit_transform(pred_list)
+        #self.__plot_3d(reduced_pred, label_list)
+        #self.__plot_3d(reduced_pred, cluster_pred)   
              
         # Show all
         plt.show()
     
-    #guess it will be slow, at least for seach_space_len with large values
+    #slow, at least for seach_space_len with large values -TODO save all the image points for a good model. 
     def query_for_sim_expressions(self, image, seach_space_len = 3000, N_images_to_show = 10):
+        best_dist = [np.inf] * N_images_to_show
 
-        #cnt = 0
+        if image: #test this
+            im = image
+            image_w_extra_dim = np.expand_dims(im, axis = 0)
+            best_im = np.zeros((N_images_to_show, im.shape[0], im.shape[1], im.shape[2]))
+            image_plus_zeros = [image_w_extra_dim, np.zeros(image_w_extra_dim.shape), np.zeros(image_w_extra_dim.shape)]
+            im_pred = self.model.predict(image_plus_zeros, batch_size = 1, steps = 1)[0, 0:self.embedding_size]
+            
         for cnt, (x, y) in enumerate(self.generator):
-            '''
-            plt.figure(1)
-            plt.imshow(np.squeeze(x[0]))
-            plt.figure(2)
-            plt.imshow(np.squeeze(x[1]))
-            plt.figure(3)
-            plt.imshow(np.squeeze(x[2]))
-            plt.show()
-            '''
+
             # Init
             if (cnt == 0) and (image == None):
                 image_w_extra_dim = x[0].copy()
                 im = image_w_extra_dim[0]
 
-                # Find predicted value of image
+                # Find predicted point of image
                 image_plus_zeros = [image_w_extra_dim, np.zeros(image_w_extra_dim.shape), np.zeros(image_w_extra_dim.shape)]
                 im_pred = self.model.predict(image_plus_zeros, batch_size = 1, steps = 1)[0, 0:self.embedding_size]
-                
                 best_im = np.zeros((N_images_to_show, im.shape[0], im.shape[1], im.shape[2]))
-                best_dist = [np.inf] * N_images_to_show
+                
                 continue
 
-            print(cnt)
+            print(cnt, '/', seach_space_len)
 
             for i in range(3):
                 if np.array_equal(x[i], image_w_extra_dim):
                     x[i] = np.zeros(image_w_extra_dim.shape)
                   
-            for j in range(N_images_to_show): #slow?
+            for j in range(N_images_to_show): #slow? - nah
                 for k in range(3):
                     if np.array_equal(best_im[j], np.squeeze(x[k])):
                         x[k] = np.zeros(image_w_extra_dim.shape)
@@ -199,12 +224,85 @@ class Predict:
         plt.ylabel('Similarity')
         plt.grid()
         plt.show()
-            
+    
+
+    '''
+    Finds images in the dataset, and predicts on all. saves the points. shows the images closest (spatial distance) to the image from cam
+    '''
+    def find_sim_fom_cam(self, N_images_from_database = 500):
+
+        N_images_from_database = int(np.floor(N_images_from_database/3)*3)
+        tmp_im_list = []
+        points = np.zeros((N_images_from_database, 16))
+        im = np.zeros((N_images_from_database, self.image_shape[0], self.image_shape[1], self.image_shape[2]), dtype=np.float32) 
+
+        for N, image in enumerate(os.listdir(self.data_path)):
+            if N >= N_images_from_database:
+                break
+            if not os.path.isfile(self.data_path + '/' + image):
+                continue
+
+            im[N] = cv2.imread(self.data_path + '/' + image)
+            if image.split('.')[-1] == 'jpg':
+                im[N] = np.clip(cv2.cvtColor(im[N], cv2.COLOR_BGR2RGB)/255, 0,1)
+            tmp_im_list.append(np.expand_dims(im[N], axis = 0))
+
+            if N%3 == 2:
+                pred = np.squeeze(self.model.predict(tmp_im_list, batch_size = 1, steps = 1))
+                for i in range(3):
+                    point = pred[i*16: (i*16)+16]
+                    points[N] = point
+                tmp_im_list = []
         
+        vs = VideoStream(src=0).start()
+        frame = vs.read()
+        fd = dlib.get_frontal_face_detector()
+
+        while True:
+            frame = vs.read()
+            gray_image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            try:
+                face = fd(gray_image, 1)[0]
+                frame_to_model = frame[face.top():face.bottom(), face.left():face.right()]
+            except:
+                print('no face detected')
+                continue
+            
+            if frame.shape != self.image_shape:
+                zoom_factor = [int(self.image_shape[0])/frame_to_model.shape[0], int(self.image_shape[1])/frame_to_model.shape[1]] 
+                if min(zoom_factor) < 70:
+                    print('move closer to the camera')
+                    continue
+                frame_to_model = ndimage.zoom(frame_to_model, [zoom_factor[0], zoom_factor[1], 1], order =3)
+
+            else: 
+                frame = frame_to_model.copy()
+
+            frame_to_model = np.clip(frame_to_model/255, 0, 1)
+            frame_to_model = np.expand_dims(frame_to_model, axis = 0)
+
+            pred = self.model.predict([frame_to_model, np.zeros(frame_to_model.shape), np.zeros(frame_to_model.shape)], batch_size = 1, steps = 1)
+            pred = np.squeeze(pred)[0:16]
+            best = np.inf
+            best_index = None
+            for i in range(len(points)):
+                dist = distance.euclidean(pred, points[i])
+                if dist < best:
+                    best = dist
+                    best_index = i
+            
+            cv2.imshow('from cam', frame)
+            cv2.imshow('result from database', im[best_index])
+            
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord("q"):
+                break
+
+        cv2.destroyAllWindows()
+        vs.stop()
 
 
 
-      
     def __generator_FEC(self):
         trip_gen = TripletGenerator(self.data_path, out_shape = self.image_shape, batch_size=self.batch_size, augment=False, data=self.N_data_samples, train_val_split = 0.05)
         self.generator = trip_gen.flow_from_dir(set = 'train')
@@ -249,7 +347,7 @@ class Predict:
                     label_list.append(y[n])
         return pred_list, im_list, label_list
 
-    def __plot_2d(self, images, reduced_pred):
+    def __plot_2d(self, images, reduced_pred, plt_show = True):
         size = 0.01
         fig, ax = plt.subplots(1, 1)
         ax.set_xlim(np.amin(reduced_pred[:,0])-size, np.amax(reduced_pred[:,0])+size)
@@ -257,7 +355,8 @@ class Predict:
         for i, im in enumerate(images):
             extent = [reduced_pred[i, 0]-size, reduced_pred[i, 0]+size, reduced_pred[i, 1]-size, reduced_pred[i, 1]+size]
             ax.imshow(im, extent=extent)
-        plt.show()
+        if plt_show:
+            plt.show()
 
     def __plot_2d_label_frame(self, image, reduced_pred, cluster_pred):
         size = 0.01
@@ -309,11 +408,14 @@ if __name__ == "__main__":
     # Model
     model_weight_path = 'Models/FECNet_dense_1.h5'
     image_shape = (224, 224, 3)
-    P = Predict(data_path, model_weight_path, image_shape=image_shape, N_data_samples=30000, generator_type='orig_FECNet', model_type='FECNet_dense')
+    P = Predict(data_path, model_weight_path, image_shape=image_shape, N_data_samples=500, generator_type='orig_FECNet', model_type='FECNet_dense')
     #P.eval_gen()
     #P.pca(N_comp = 2)
     #P.cluster(method = 'K-means', args = [12])
-    P.query_for_sim_expressions(None)
+    #P.cluster(method='AffinityPropagation', pca_kpca='kpca')
+    #P.query_for_sim_expressions(None)
+    #P.KPCA()
+    P.find_sim_fom_cam()
 
 
 
