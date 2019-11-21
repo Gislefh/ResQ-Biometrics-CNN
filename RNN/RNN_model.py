@@ -23,19 +23,21 @@ class RnnCnnModel:
             self.model = vgg16.VGG16(include_top=False, weights=W, input_shape=self.input_shape, pooling=pooling)
 
         else:
-            print('-- FROM SELF -- Choose from the list of base models')
-            exit()
+            raise Exception('-- FROM SELF -- Choose from the list of base models')
         
 
     def add_RNN(self):
         if not self.model:
-            print('-- FROM SELF -- Add a base model first')
-            exit()
+            raise Exception('-- FROM SELF -- Add a base model first')
 
         input_ = self.model.output
         
 
-        
+
+class PureRnn:
+
+    def __init__(self, input_shape):
+        self.input_shape = 
         
 
 
