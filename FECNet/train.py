@@ -13,7 +13,7 @@ import os
 
 data_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\FEC_dataset\\images\\two-class_triplets'
 save_model_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\ResQ-Biometrics-CNN\\FECNet\\Models\\'
-new_model_name = 'FECNet_test7.h5'
+new_model_name = 'FECNet_dense_1.h5'
 if new_model_name in os.listdir(save_model_path):
     print('--FROM SELF--: Model name exists. Change the model name')
     exit()
@@ -22,15 +22,15 @@ out_shape = (224, 224, 3)
 delta_trip_loss = 0.1
 embedding_size = 16 # faceNet uses 128, FECNet uses 16.
 batch_size = 16
-N_data_samples = 40000
+N_data_samples = None
 
 
 # Data Generator 
 trip_gen = TripletGenerator(data_path, out_shape = out_shape, batch_size=batch_size, augment=False, data = N_data_samples, train_val_split=0.05)
-gen = trip_gen.flow_from_mem(set = 'train')
+gen = trip_gen.flow_from_dir(set = 'train')
 data_len = trip_gen.get_data_len(set = 'train')
 
-val_gen = trip_gen.flow_from_mem(set = 'val')
+val_gen = trip_gen.flow_from_dir(set = 'val')
 val_data_len = trip_gen.get_data_len(set = 'val')
 
 

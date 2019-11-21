@@ -227,7 +227,7 @@ class Predict:
     
 
     '''
-    Finds images in the dataset, and predicts on all. saves the points. shows the images closest (spatial distance) to the image from cam
+    Finds images in the dataset, and predicts on all. saves the points. shows the images closest (spatial distance) to the image from cam - works
     '''
     def find_sim_fom_cam(self, N_images_from_database = 500):
 
@@ -270,9 +270,9 @@ class Predict:
             
             if frame.shape != self.image_shape:
                 zoom_factor = [int(self.image_shape[0])/frame_to_model.shape[0], int(self.image_shape[1])/frame_to_model.shape[1]] 
-                if min(zoom_factor) < 70:
-                    print('move closer to the camera')
-                    continue
+                #if min(zoom_factor) < 70:
+                    #print('move closer to the camera')
+                    #continue
                 frame_to_model = ndimage.zoom(frame_to_model, [zoom_factor[0], zoom_factor[1], 1], order =3)
 
             else: 
@@ -415,7 +415,7 @@ if __name__ == "__main__":
     #P.cluster(method='AffinityPropagation', pca_kpca='kpca')
     #P.query_for_sim_expressions(None)
     #P.KPCA()
-    P.find_sim_fom_cam()
+    P.find_sim_fom_cam(N_images_from_database = 1000)
 
 
 

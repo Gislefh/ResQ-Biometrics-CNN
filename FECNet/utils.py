@@ -5,7 +5,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from sklearn.decomposition import PCA
 
 ## returns distanses
-def distances(prediction, embedding_size):
+def Distances(prediction, embedding_size):
     e1 = prediction[:embedding_size]
     e2 = prediction[embedding_size:2*embedding_size]
     e3 = prediction[2*embedding_size:]

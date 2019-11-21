@@ -6,36 +6,6 @@ from tensorflow.math import l2_normalize
 from tensorflow.compat.v2.keras.applications.inception_v3 import InceptionV3
 from scipy.spatial import distance
 
-def tensorflow_model(input_shape):
-    # input 
-    input_layer = Input(shape=input_shape)
-
-    # block 1
-    x = Conv2D(32, 3, activation='relu')(input_layer)
-    x = Conv2D(32, 3, activation='relu')(x)
-    x = Conv2D(32, 3, activation='relu')(x)
-    x = MaxPooling2D((2,2))(x)
-    x = Dropout(0.1)(x)
-
-    # block 2
-    x = Conv2D(64, 3, activation='relu')(x)
-    x = Conv2D(64, 3, activation='relu')(x)
-    x = Conv2D(64, 3, activation='relu')(x)
-    
-    # Global pooling
-    x = GlobalMaxPooling2D()(x)
-    x = Dropout(0.1)(x)
-
-    # L2 normalization
-    x = l2_normalize(x)
-
-    # Embedding
-    #x = Embedding(input_dim=x.shape, output_dim=128)
-    x = Dense(128)(x)
-
-    model = Model(inputs=input_layer, outputs=x)
-
-    return model
 
 
 def faceNet_inceptionv3_model(input_shape, embedding_size):
