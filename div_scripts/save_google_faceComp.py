@@ -76,7 +76,7 @@ def face_from_web_gen(path, out_shape=(224, 224), start_row=0, trip_type = 'TWO_
 if __name__ == '__main__':
     save_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\FEC_dataset\\images\\one-class_triplets\\'
     path_to_csv = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\FEC_dataset\\faceexp-comparison-data-train-public.csv'
-    for image1, image2, image3, triplet_type, row_nr, label in face_from_web_gen(path_to_csv, start_row=20339, trip_type='ONE_CLASS_TRIPLET'):
+    for image1, image2, image3, triplet_type, row_nr, label in face_from_web_gen(path_to_csv, start_row=54870, trip_type='ONE_CLASS_TRIPLET'):
         cv2.imwrite(save_path+'{}_{}_{}.jpg'.format(row_nr, '1', label), image1)
         cv2.imwrite(save_path+'{}_{}_{}.jpg'.format(row_nr, '2', label), image2)
         cv2.imwrite(save_path+'{}_{}_{}.jpg'.format(row_nr, '3', label), image3)
