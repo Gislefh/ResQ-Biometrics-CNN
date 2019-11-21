@@ -1,4 +1,10 @@
 from __future__ import print_function
+# Make GPU invis to tf
+import os 
+os.environ["CUDA_VISIBLE_DEVICES"]="-1"  
+
+
+
 import sys
 sys.path.insert(0, 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\ResQ-Biometrics-CNN\\classes')
 
@@ -54,13 +60,19 @@ class VisualizeLayers:
         output_layer = layer_dict[layer_name]
         assert isinstance(output_layer, layers.Conv2D)
 
+        #print(self.filter_range[1])
+        #print(np.shape(output_layer.get_weights()))
+        #exit()
+        
         # Compute to be processed filter range
         filter_lower = self.filter_range[0]
         filter_upper = (self.filter_range[1]
                         if self.filter_range[1] is not None
-                        else len(output_layer.get_weights()[1]))
+                        else np.shape(output_layer.get_weights())[-1])
+
+        print(filter_upper, filter_lower, np.shape(output_layer.get_weights())[-1])                
         assert(filter_lower >= 0
-            and filter_upper <= len(output_layer.get_weights()[1])
+            and filter_upper <= np.shape(output_layer.get_weights())[-1]
             and filter_upper > filter_lower)
         print('Compute filters {:} to {:}'.format(filter_lower, filter_upper))
      
@@ -178,9 +190,14 @@ class VisualizeLayers:
         return x / (K.sqrt(K.mean(K.square(x))) + K.epsilon())
 
 
+
+
 if __name__ == '__main__':
+  
+
     my_model = False
     vgg_model = True
+    Xception = False
 
     if vgg_model:
         LAYER_NAME = 'block3_conv1'
@@ -194,12 +211,17 @@ if __name__ == '__main__':
         model2= Model(inputs=model1.input, outputs=model1.get_layer(end_layer_name).output)
         model = model2
 
+    elif Xception:
+
+        model_path = 'C:/Users/47450/Documents/ResQ Biometrics/ResQ-Biometrics-CNN/Models/model_expw_preTr_Xcept_3.h5'
+        model = load_model(model_path)
+        LAYER_NAME = 'conv2d_4'
     else:
         exit()
     model.summary()
 
 
-    VL = VisualizeLayers(model)
+    VL = VisualizeLayers(model, filter_range=(0, 20))
     VL.visualize_layer(LAYER_NAME)
     images = VL.get_filters()
     for i in images:

@@ -7,13 +7,13 @@ from scipy import ndimage
 from class_utils import one_hot
 
 from pytictoc import TicToc
+from tqdm import tqdm
 import dlib
 import csv
 import requests
 
 from random import shuffle
-#sys.path.insert(0, "C:\\Users\\47450\\Documents\\ResQ Biometrics\\ResQ-Biometrics-Model-1\\classes")
-#from class_faceDetection import FaceDetection
+
 
 
 
@@ -69,8 +69,6 @@ class Generator:
 
 	'''
 	def __from_dir(self, N_images_per_class):
-
-		image_list = []
 		class_ = 0
 
 		tmp_val_set = []
@@ -119,11 +117,10 @@ class Generator:
 			self.train_val_split = 0
 
 		# create sets
-		T = TicToc()
 		self.__from_dir(self.N_images_per_class)
 		
-		self.X = np.zeros(self.X_shape)
-		self.Y = np.zeros(self.Y_shape)
+		self.X = np.zeros(self.X_shape, dtype=np.float32)
+		self.Y = np.zeros(self.Y_shape, dtype=np.float32)
 
 		if set == 'train':
 			tot_list = self.train_set
@@ -158,15 +155,15 @@ class Generator:
 					
 					# BGR to RGB
 					if '.jpg' in tot_list[choice, 0]:
-						self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
+						# quickFix - should be improved
+						try:
+							self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
+						except:
+							print('Error when converting from BGR to RGB for image at location:', tot_list[choice, 0])
 
-
-
-			
 				#normalize image to [0,1]
 				self.image = np.clip(self.image / 255, 0, 1)
 			
-
 				### add augmentation	
 				if (set == 'train') or (set == 'val' and augment_validation):
 					for j, aug_method in enumerate(self.aug_method):
@@ -193,6 +190,117 @@ class Generator:
 
 				if i%self.batch_size == self.batch_size -1:
 					yield(self.X, self.Y)
+
+
+	def flow_from_mem(self,set = 'train', augment_validation = True, fast_aug = True):
+		if set == 'test':
+			self.train_val_split = 0
+
+		# create sets
+		self.__from_dir(self.N_images_per_class)
+		
+
+		if set == 'train':
+			tot_list = self.train_set
+		elif set == 'val':
+			tot_list = self.val_set
+		elif set == 'test':
+			tot_list = self.train_set
+		else:
+			print("select either: 'train', 'val' or 'test'")
+			exit()
+
+		self.X = np.zeros((len(tot_list), self.X_shape[1], self.X_shape[2], self.X_shape[3]), dtype=np.uint8)
+		self.Y = np.zeros((len(tot_list), self.Y_shape[1]), dtype=np.uint8)
+
+		image_list = tot_list.copy()
+		choise_list = list(range(len(image_list)))
+
+		for i in tqdm(range(len(image_list))):
+			
+			##choose random image from list
+			#choice = np.random.choice(len(image_list[:, 0]))
+			choice = choise_list[i]
+			orig_ch = cv2.imread( image_list[choice, 0]).shape[-1]
+			label = int(image_list[choice, 1])
+
+			if (orig_ch == 3) and (self.N_channels == 1):
+				im_tmp = cv2.imread( image_list[choice, 0])
+				self.image = np.expand_dims(cv2.cvtColor(im_tmp, cv2.COLOR_BGR2GRAY), axis = -1)
+			else:
+				self.image = cv2.imread( image_list[choice, 0])[:, :, 0:self.N_channels]
+				
+				# BGR to RGB
+				if '.jpg' in tot_list[choice, 0]:
+					# quickFix - should be improved
+					try:
+						self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
+					except:
+						print('Error when converting from BGR to RGB for image at location:', tot_list[choice, 0])
+
+
+
+			## reshape image
+			if self.image.shape != self.X[0].shape:
+				self.X[i] = self.__im_reshape(self.image.shape, self.image)
+			else:
+				self.X[i] = self.image
+
+			## one hot encode ground truth
+			if self.class_list:
+				self.Y[i] = one_hot(label, len(self.class_list))
+			else:
+				self.Y[i] = one_hot(label, self.N_classes)
+
+		
+		# Fast augmentations - batch-wise
+		if fast_aug:
+			for i in range(len(self.aug_method)):
+				if self.aug_method[i] == self.__flip:
+					self.aug_method[i] = self.__BW_flip
+
+				if self.aug_method[i] == self.__gamma_transfrom:
+					self.aug_method[i] = self.__BW_gamma_transfrom
+
+				if self.aug_method[i] == self.__rotate:
+					self.aug_method[i] = self.__BW_rotate
+
+				if self.aug_method[i] == self.__shift:
+					self.aug_method[i] = self.__BW_shift
+
+				if self.aug_method[i] == self.__zoom:
+					self.aug_method[i] = self.__BW_zoom
+
+							
+		self.X_out = np.zeros(self.X_shape, dtype=np.float32)
+		self.Y_out = np.zeros(self.Y_shape, dtype=np.float32)
+
+		
+		N_batches = int(np.floor(len(image_list)/(self.batch_size)))
+	
+		while True:
+			shuffle(choise_list)
+			for i in range(N_batches):
+				self.X_out = self.X[choise_list[i*self.batch_size : (1+i)*self.batch_size]]
+				self.Y_out = self.Y[choise_list[i*self.batch_size : (1+i)*self.batch_size]]
+
+				#normalize image to [0,1]
+				self.X_out = np.clip(self.X_out / 255, 0, 1)
+				
+				### add augmentation
+				if (set == 'train') or (set == 'val' and augment_validation):
+					for j, aug_method in enumerate(self.aug_method):
+						if self.aug_args[j] == None:
+							aug_method()
+						else:
+							aug_method(self.aug_args[j])
+
+				yield self.X_out, self.Y_out
+				
+
+
+		
+			
 
 		
 	### gets facial images from the web, displayes them and saves them in save_path in the chosen folder of the class. 
@@ -399,8 +507,39 @@ class Generator:
 
 		self.image = ndimage.zoom(self.image, (zoom_range_x, zoom_range_y, 1), order = 1)
 
+	## -- batch-wise aug -- 
+	def __BW_gamma_transfrom(self, args):
+		gamma = np.random.uniform(args[0], args[1])
+		self.X_out = np.power(self.X_out, gamma)
+
+
+	def __BW_rotate(self, max_angle):	
+		angle = 2 * max_angle * np.random.rand() - max_angle 
+		self.X_out =  ndimage.rotate(self.X_out, angle, axes=[1,2], reshape = False, order = 1)
 
 	
+	def __BW_shift(self, max_shift):
+		shift_x = np.random.uniform(-self.image.shape[0], self.image.shape[0]) * max_shift
+		shift_y = np.random.uniform(-self.image.shape[1], self.image.shape[1]) * max_shift
+		self.X_out = ndimage.shift(self.X_out, (0, shift_x, shift_y, 0), order = 1)
+
+	def __BW_flip(self):
+		if np.random.rand() > 0.5:
+			self.X_out = np.flip(self.X_out, axis = 2)
+
+
+	def __BW_zoom(self, args): #dont use zoom
+		if np.random.rand() > 0.5:
+			zoom_range_x = args[0] + (np.random.rand() * (args[1]- args[0]))
+			zoom_range_y = 1
+		else:
+			zoom_range_x = 1
+			zoom_range_y = args[0] + (np.random.rand() * (args[1]- args[0]))
+
+
+		#TODO fix so that self.X_out don't change shape
+		#self.X_out = ndimage.zoom(self.X_out, (1, zoom_range_x, zoom_range_y, 1), order = 1)
+		
 
 	######## ---- utils ---
 
@@ -493,3 +632,42 @@ class Generator:
 		"""
 	
 
+
+
+
+if __name__ == '__main__':
+	## paths
+	train_path = 'C:/Users/47450/Documents/ResQ Biometrics/Data sets/ExpW/train'
+
+	## consts
+	N_channels = 3
+	N_images_per_class = None
+	batch_size = 64
+	image_shape = (100, 100)
+	N_classes = 6
+	X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
+	Y_shape = (batch_size, N_classes)
+	val_size = 0.3
+
+	### generator
+	gen_train = Generator(train_path, X_shape, Y_shape, N_classes, N_channels, batch_size, 
+						train_val_split=val_size, N_images_per_class=N_images_per_class, 
+						class_list=['angry', 'disgust', 'happy', 'neutral', 'sad', 'surprise'])
+
+	#gen_train.add_rotate(max_abs_angle_deg=20)
+	#gen_train.add_gamma_transform(0.5,1.5)
+	#gen_train.add_flip()
+	#gen_train.add_shift(0.1)
+
+	train_gen = gen_train.flow_from_mem(set = 'train', fast_aug=True)
+	train_gen_dir = gen_train.flow_from_dir(set = 'train')
+	val_gen = gen_train.flow_from_mem(set = 'val', augment_validation = True, fast_aug=True)
+
+	T = TicToc()
+	T.tic()
+	for i, (x,y) in enumerate(train_gen):
+
+		print(i)
+		if i > 20:
+			break
+	T.toc()

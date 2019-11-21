@@ -16,7 +16,7 @@ OUT
 def one_hot(value, N_classes):
 
 	if N_classes < value:
-		raise Exception("Can't one hot encode value outside the range")
+		raise Exception("-- FROM SELF -- Can't one hot encode value outside the range")
 	
 	one_hot = np.zeros((N_classes))
 	one_hot[value] = 1
@@ -62,15 +62,30 @@ def get_vgg_w_imnet(input_shape, N_classes, show_trainability = True, freeze_lay
 			print('layer nr:', i, ', name:', layer.name, ', trainable:', layer.trainable)
 
 	return model
+	
+def get_Xception(input_shape, N_classes, freeze_to_layer = 'all_but_dense'):
+	init_model = keras.applications.xception.Xception(include_top=False, weights='imagenet', input_shape=input_shape, pooling='max')
+
+	x = Dense(128, activation='relu')(init_model.output)
+	x = Dropout(0.3)(x)
+	preds = Dense(N_classes, activation='softmax')(x)
+	model = Model(init_model.input, preds)
+
+	if freeze_to_layer == 'all_but_dense':
+		for layer in model.layers:
+			if layer.name == 'global_max_pooling2d_1':
+				break
+			layer.trainable = False
+
+	return model
+
 
 
 def get_inception_w_imnet(input_shape, N_classes, show_trainability=True, freeze_layers = False):
 	init_model = keras.applications.inception_v3.InceptionV3(include_top=False, weights='imagenet', input_shape=input_shape,
 												pooling='max', classes=None)
 
-	#x = Dense(255, activation='relu')(init_model.output)
-	#x = Dropout(0.3)(x)
-	x = Dense(255, activation='relu')(x)
+	x = Dense(255, activation='relu')(init_model.output)
 	x = Dropout(0.3)(x)
 	preds = Dense(N_classes, activation='softmax')(init_model.output)
 	model = Model(init_model.input, preds)
