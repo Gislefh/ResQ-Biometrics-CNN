@@ -4,19 +4,19 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers, Model
 
+
 class GeneratorModels:
 
-    def __init__(self, input_shape, model_type = 'Unet'):
+    def __init__(self, input_shape, model_type='Unet'):
         self.input_shape = input_shape
-        #self.batch_size = batch_size # remove this sooon
+        # self.batch_size = batch_size # remove this sooon
         self.model_type = model_type
-
 
     def get_model(self):
         if self.model_type == 'Unet':
             model = self.__Unet_model()
         else:
-            raise Exception('-- FROM SELF -- choose "Unet"')            
+            raise Exception('-- FROM SELF -- choose "Unet"')
         return model
 
     def __Unet_model(self):
@@ -26,13 +26,14 @@ class GeneratorModels:
         
         The input to the Unet is both images concatinated about the channel axis
         """
+
         def downsample(filters, size, apply_batchnorm=True):
             initializer = tf.random_normal_initializer(0., 0.02)
 
             result = tf.keras.Sequential()
             result.add(
                 tf.keras.layers.Conv2D(filters, size, strides=2, padding='same',
-                                        kernel_initializer=initializer, use_bias=False))
+                                       kernel_initializer=initializer, use_bias=False))
 
             if apply_batchnorm:
                 result.add(tf.keras.layers.BatchNormalization())
@@ -59,17 +60,16 @@ class GeneratorModels:
             result.add(tf.keras.layers.ReLU())
 
             return result
-        
 
         # Init - include these in the function call. 
         init_N_filters = 32
-        filter_size = 4    
+        filter_size = 4
 
-        inp = layers.Input(shape = (self.input_shape[0], self.input_shape[1], self.input_shape[2]*2))
+        inp = layers.Input(shape=(self.input_shape[0], self.input_shape[1], self.input_shape[2] * 2))
         down_layers_list = []
         current_first_dim = self.input_shape[0]
         init = True
-        
+
         # Down-Sampling
         cnt = 0
         while current_first_dim >= filter_size:
@@ -77,34 +77,32 @@ class GeneratorModels:
                 x = downsample(init_N_filters, filter_size)(inp)
                 init = False
             else:
-                x = downsample(init_N_filters, filter_size)(x)                
+                x = downsample(init_N_filters, filter_size)(x)
             down_layers_list.append(x)
-            if cnt%2 == 1:
+            if cnt % 2 == 1:
                 init_N_filters = init_N_filters * 2
-            current_first_dim = self.input_shape[0] / np.power(2,len(down_layers_list))
+            current_first_dim = self.input_shape[0] / np.power(2, len(down_layers_list))
 
-            cnt+=1
-        
+            cnt += 1
+
         down_layers_list.reverse()
         init_N_filters = int(init_N_filters / 2)
 
         # Up-Sampling
         cnt = 0
-        for i in range(len(down_layers_list)-1):
+        for i in range(len(down_layers_list) - 1):
 
-            x = layers.Concatenate()([x, down_layers_list[i]])   
-            x = upsample(init_N_filters, filter_size)(x) 
-            if cnt%2 == 1:      
+            x = layers.Concatenate()([x, down_layers_list[i]])
+            x = upsample(init_N_filters, filter_size)(x)
+            if cnt % 2 == 1:
                 init_N_filters = int(init_N_filters / 2)
 
-            cnt+=1
-        x = layers.Concatenate()([x, down_layers_list[-1]])   
+            cnt += 1
+        x = layers.Concatenate()([x, down_layers_list[-1]])
         output = upsample(3, filter_size)(x)
-  
+
         model = Model(inp, output, name='Unet')
         return model
-
-
 
     """
     def __simple_MNIST_model(self): #from https://www.tensorflow.org/tutorials/generative/dcgan
@@ -134,19 +132,20 @@ class GeneratorModels:
         return Model
     """
 
+
 class DiscriminatorModel:
 
-    def __init__(self, input_shape, model_type = 'patchGAN'):
+    def __init__(self, input_shape, model_type='patchGAN'):
         self.input_shape = input_shape
         self.model_type = model_type
 
     def get_model(self):
         if self.model_type == 'patchGAN':
-            model = self.__patchGAN_model() 
+            model = self.__patchGAN_model()
         else:
             raise Exception('-- FROM SELF -- choose "patchGAN"')
         return model
-    
+
     def __patchGAN_model(self):
         def downsample(filters, size, apply_batchnorm=True):
             initializer = tf.random_normal_initializer(0., 0.02)
@@ -154,7 +153,7 @@ class DiscriminatorModel:
             result = tf.keras.Sequential()
             result.add(
                 tf.keras.layers.Conv2D(filters, size, strides=2, padding='same',
-                                        kernel_initializer=initializer, use_bias=False))
+                                       kernel_initializer=initializer, use_bias=False))
 
             if apply_batchnorm:
                 result.add(tf.keras.layers.BatchNormalization())
@@ -169,25 +168,25 @@ class DiscriminatorModel:
         Ise = layers.Input(shape=self.input_shape, name='I_SE')
         Iae = layers.Input(shape=self.input_shape, name='I_AE')
 
-        x = layers.concatenate([Ian, Ise, Iae]) 
+        x = layers.concatenate([Ian, Ise, Iae])
 
-        down1 = downsample(64, 4, False)(x) 
-        down2 = downsample(128, 4)(down1) 
-        down3 = downsample(256, 4)(down2) 
+        down1 = downsample(64, 4, False)(x)
+        down2 = downsample(128, 4)(down1)
+        down3 = downsample(256, 4)(down2)
 
-        zero_pad1 = layers.ZeroPadding2D()(down3) 
+        zero_pad1 = layers.ZeroPadding2D()(down3)
         conv = layers.Conv2D(512, 4, strides=1,
-                                        kernel_initializer=initializer,
-                                        use_bias=False)(zero_pad1) 
+                             kernel_initializer=initializer,
+                             use_bias=False)(zero_pad1)
 
         batchnorm1 = layers.BatchNormalization()(conv)
 
         leaky_relu = layers.LeakyReLU()(batchnorm1)
 
-        zero_pad2 = layers.ZeroPadding2D()(leaky_relu) 
+        zero_pad2 = layers.ZeroPadding2D()(leaky_relu)
 
         last = layers.Conv2D(1, 4, strides=1,
-                                        kernel_initializer=initializer)(zero_pad2) 
+                             kernel_initializer=initializer)(zero_pad2)
 
         model = Model(inputs=[Ian, Ise, Iae], outputs=last, name='PatchGAN')
 
@@ -196,7 +195,7 @@ class DiscriminatorModel:
 
 class ClassificationModel:
 
-    def __init__(self, input_shape, model_type = 'resNet'):
+    def __init__(self, input_shape, model_type='resNet'):
         self.input_shape = input_shape
         self.model_type = model_type
 
@@ -210,40 +209,39 @@ class ClassificationModel:
         return self.model
 
     def __resNet_model(self):
-        resNet = tf.keras.applications.ResNet50(include_top=False, weights='imagenet', input_shape=self.input_shape, pooling='max')
+        resNet = tf.keras.applications.ResNet50(include_top=False, weights='imagenet', input_shape=self.input_shape,
+                                                pooling='max')
 
-        #input_layer = layers.Input(shape = self.input_shape)
+        # input_layer = layers.Input(shape = self.input_shape)
 
         for layer in resNet.layers:
             if layer.name == 'add_9':
                 break
             else:
                 layer.trainable = False
-        
+
         output = layers.Dense(512)(resNet.output)
         model = Model(inputs=resNet.input, outputs=output, name='ResNet50')
         return model
-    
+
     def __mobileNetv2_model(self):
-        mobileNetv2 = tf.keras.applications.MobileNetV2(input_shape=self.input_shape, alpha=1.0, include_top=False, weights='imagenet', pooling='max')
+        mobileNetv2 = tf.keras.applications.MobileNetV2(input_shape=self.input_shape, alpha=1.0, include_top=False,
+                                                        weights='imagenet', pooling='max')
 
         for layer in mobileNetv2.layers:
             if layer.name == 'block_8_add':
                 break
             else:
                 layer.trainable = False
-        
+
         output = layers.Dense(512)(mobileNetv2.output)
         model = Model(inputs=mobileNetv2.input, outputs=output, name='MobileNetV2')
 
         return model
-        
-
-        
 
 
 if __name__ == '__main__':
-    input_shape = (256,256,3)
+    input_shape = (256, 256, 3)
     batch_size = None
     GenModel = GeneratorModels(input_shape)
     gen_model = GenModel.get_model()
@@ -255,9 +253,6 @@ if __name__ == '__main__':
     gen_model.summary()
     disc_model.summary()
     class_model.summary()
-
-
-
 
 """ Simple model test
 if __name__ == '__main__':
