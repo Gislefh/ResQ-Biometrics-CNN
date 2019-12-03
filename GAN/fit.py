@@ -1,14 +1,36 @@
 import sys
 import time
 import numpy as np
-
-from GAN.classes.class_model import GeneratorModels, DiscriminatorModel, ClassificationModel
+import tensorflow as tf
 
 sys.path.insert(0, "classes")
+from class_model import GeneratorModels, DiscriminatorModel, ClassificationModel
+from class_loss import e_loss, cGAN_loss, g_loss, l1loss, softmax_cross_entropy
 
-import tensorflow as tf
-from class_model import *
-from class_loss import e_loss, d_loss, g_loss
+## Constants
+input_shape = (256, 256, 3)
+batch_size = None
+
+#loss function constants - epirically set from the paper
+#lambda_1 = tf.constant([1]) 
+#lambda_2 = tf.constant([200]) 
+#lambda_3 = tf.constant([50]) 
+lambda_1 = 1
+lambda_2 = 200
+lambda_3 = 50
+
+## LOSS
+generator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
+discriminator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
+
+
+## Load models
+GenModel = GeneratorModels(input_shape)
+g_model = GenModel.get_model()
+DiscModel = DiscriminatorModel(input_shape)
+d_model = DiscModel.get_model()
+ClassModel = ClassificationModel(input_shape, model_type='mobileNetv2')
+e_model = ClassModel.get_model()
 
 
 # Get the predictions.
@@ -22,13 +44,10 @@ def train_step(i_se, i_an, i_ae, labels):
     # persistent is set to True because the tape is used more than
     # once to calculate the gradients.
 
-    real = 1
-    fake = 0
-
     with tf.GradientTape(persistent=True) as tape:
 
         """
-        OUTPUT
+        FEED-FORWARD
         """
 
         i_tilde = g_model(i_se, i_an)
@@ -40,36 +59,38 @@ def train_step(i_se, i_an, i_ae, labels):
         truth_output = e_model(i_se, i_ae)
 
         """
-        LOSS
+        LOSS - TODO test one loss for all models -vs- different loss function for the different models  
         """
-        disc_loss = d_loss(d_real, d_fake)
-        gen_loss = g_loss(disc_loss, i_ae, i_tilde)
+        cGAN_loss_value = cGAN_loss(d_real, d_fake)
+        L1_loss = l1loss(i_ae, i_tilde)
+        
+        tot_gan_loss = lambda_1 * cGAN_loss_value + lambda_2 * L1_loss
+        loss_discriminator = tf.math.negative(tot_gan_loss) # negating the loss to make it maximize the value, as tf wants to minimize - i think. 
+        loss_generator = tot_gan_loss
 
-        e_tilde_loss = e_loss(labels, tilde_output)
-        e_truth_loss = e_loss(labels, truth_output)
-
-
-
-
-    """
-    INSERT GRADIENTS
-    """
-
+        #e_tilde_loss = e_loss(labels, tilde_output)
+        #e_truth_loss = e_loss(labels, truth_output)
+        e_loss = softmax_cross_entropy(tilde_output, truth_output, labels)
 
     """
-    INSERT OPTIMIZER
+    FIND GRADIENTS
     """
+    generator_gradients = tape.gradient(loss_generator, g_model.trainable_variables)
+
+    discriminator_gradients = tape.gradient(loss_discriminator, d_model.trainable_variables)
+    
+    expression_classifier_loss = tape.gradient(loss_discriminator, d_model.trainable_variables)
+
+    """
+    BACKPROB WITH GRADIENTS
+    """
+    generator_optimizer.apply_gradients(zip(generator_gradients,
+                                          g_model.trainable_variables))
+
+    discriminator_optimizer.apply_gradients(zip(discriminator_gradients,
+                                              d_model.trainable_variables))
 
 
-
-input_shape = (256, 256, 3)
-batch_size = None
-GenModel = GeneratorModels(input_shape)
-g_model = GenModel.get_model()
-DiscModel = DiscriminatorModel(input_shape)
-d_model = DiscModel.get_model()
-ClassModel = ClassificationModel(input_shape, model_type='mobileNetv2')
-e_model = ClassModel.get_model()
 
 path_to_average_neutral = ""
 
