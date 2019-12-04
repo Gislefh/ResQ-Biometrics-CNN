@@ -124,3 +124,6 @@ for epoch in range(EPOCHS):
 
     print('Time taken for epoch {} is {} sec\n'.format(epoch + 1,
                                                        time.time() - start))
+
+
+###test
