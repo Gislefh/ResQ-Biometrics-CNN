@@ -18,8 +18,8 @@ def l1loss(I_ae, I_ae_tilde):
     return tf.reduce_mean(tf.abs(I_ae - I_ae_tilde))
 
 def softmax_cross_entropy(pred_fake, pred_truth, labels):
-    truth = tf.nn.softmax_cross_entropy_with_logits(labels, pred_truth)
-    fake = tf.nn.softmax_cross_entropy_with_logits(labels, pred_fake)
+    truth = tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=pred_truth)
+    fake = tf.nn.softmax_cross_entropy_with_logits(label=labels, logits=pred_fake)
     softmax = truth + fake
     return softmax
 

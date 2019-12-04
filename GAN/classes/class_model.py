@@ -195,9 +195,10 @@ class DiscriminatorModel:
 
 class ClassificationModel:
 
-    def __init__(self, input_shape, model_type='resNet'):
+    def __init__(self, input_shape, N_classes = 7, model_type='resNet' ):
         self.input_shape = input_shape
         self.model_type = model_type
+        self.N_classes = N_classes
 
     def get_model(self):
         if self.model_type == 'resNet':
@@ -209,10 +210,13 @@ class ClassificationModel:
         return self.model
 
     def __resNet_model(self):
+        start = layers.Input(shape = [self.input_shape[0], self.input_shape[1], self.input_shape[2]*2])
+        onexone_conv = layers.Conv2D(3, (1,1))(start)
+
         resNet = tf.keras.applications.ResNet50(include_top=False, weights='imagenet', input_shape=self.input_shape,
                                                 pooling='max')
 
-        # input_layer = layers.Input(shape = self.input_shape)
+        #input_layer = layers.Input(shape = self.input_shape)
 
         for layer in resNet.layers:
             if layer.name == 'add_9':
@@ -220,12 +224,17 @@ class ClassificationModel:
             else:
                 layer.trainable = False
 
-        x = layers.Dense(512)(resNet.output)
-        x = 
+        x = mobileNetv2.output(onexone_conv)
+        x = layers.Dense(512)(mobileNetv2.output)
+        output = layers.Dense(self.N_classes)(x)
+
         model = Model(inputs=resNet.input, outputs=output, name='ResNet50')
         return model
 
     def __mobileNetv2_model(self):
+        start = layers.Input(shape = [self.input_shape[0], self.input_shape[1], self.input_shape[2]*2])
+        onexone_conv = layers.Conv2D(3, (1,1))(start)
+        #onexone_conv = layers.SeparableConv2D(3, (1,1))(start)
         mobileNetv2 = tf.keras.applications.MobileNetV2(input_shape=self.input_shape, alpha=1.0, include_top=False,
                                                         weights='imagenet', pooling='max')
 
@@ -234,8 +243,9 @@ class ClassificationModel:
                 break
             else:
                 layer.trainable = False
-
-        output = layers.Dense(512)(mobileNetv2.output)
+        x = mobileNetv2(onexone_conv)
+        x = layers.Dense(512)(mobileNetv2.output)
+        output = layers.Dense(self.N_classes)(x)
         model = Model(inputs=mobileNetv2.input, outputs=output, name='MobileNetV2')
 
         return model

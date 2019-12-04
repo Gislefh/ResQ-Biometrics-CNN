@@ -8,15 +8,14 @@ sys.path.insert(0, "classes")
 from class_model import GeneratorModels, DiscriminatorModel, ClassificationModel
 from class_loss import e_loss, cGAN_loss, g_loss, l1loss, softmax_cross_entropy
 from class_generator import DataGenerator
-from utils import CreateAverages
+from utils import CreateAverages, one_hot
+
 ## Constants
 input_shape = (256, 256, 3)
-batch_size = None
+N_classes = 7
+batch_size = 32
 
 #loss function constants - epirically set from the paper
-#lambda_1 = tf.constant([1]) 
-#lambda_2 = tf.constant([200]) 
-#lambda_3 = tf.constant([50]) 
 lambda_1 = 1
 lambda_2 = 200
 lambda_3 = 50
@@ -36,14 +35,26 @@ e_model = ClassModel.get_model()
 
 
 ## Data Generator
+data_path = 'C:/Users/47450/Documents/ResQ Biometrics/Data sets/ExpW/train_small'
+
 # I_ae and I_an
-folder_with_landmarks = 'C:/Users/47450/Documents/ResQ Biometrics/Data sets/IF-GAN_averages/test/fear'
-data_path_averages = 'C:/Users/47450/Documents/ResQ Biometrics/Data sets/ExpW/train_small'
-CA = CreateAverages(data_path_averages)
-I_ae = CA.get_iae()
-I_an = CA.get_ian()
+folder_with_landmarks_all = 'C:/Users/47450/Documents/ResQ Biometrics/Data sets/IF-GAN_averages/test'
+CA = CreateAverages(data_path)
+I_ae, labels_iae = CA.get_iae(folder_with_landmarks_all, out_shape=[input_shape[0],input_shape[1]])
+I_an = CA.get_ian(folder_with_landmarks_all, out_shape=[input_shape[0],input_shape[1]])
+I_an_batch_stack = np.zeros((batch_size, input_shape[0], input_shape[1], input_shape[2]), dtype=np.float32)
+for i in range(batch_size):
+    I_an_batch_stack[i] = I_an
 
 
+
+# generator
+DG = DataGenerator(data_path)
+labels_data_gen = DG.get_labels()
+gen = DG.flow_from_dir(batch_size, input_shape)
+
+#print(labels_data_gen, labels_iae)
+#exit()
 #@tf.function # <- ditch this?
 def train_step(i_se, i_an, i_ae, labels):
     # persistent is set to True because the tape is used more than
@@ -54,14 +65,20 @@ def train_step(i_se, i_an, i_ae, labels):
         """
         FEED-FORWARD
         """
+        to_generator = np.concatenate((i_se, i_an), axis = -1)
+        i_tilde = g_model(to_generator)
+        print(type(i_tilde))
 
-        i_tilde = g_model(i_se, i_an)
+        d_real = d_model([i_an, i_se, i_ae])
+        d_fake = d_model([i_an, i_se, i_tilde])
 
-        d_real = d_model(i_an, i_se, i_ae)
-        d_fake = d_model(i_an, i_se, i_tilde)
+        print(i_se.shape, i_tilde.shape, i_ae.shape)
+        to_expression_tilde = tf.concat([i_se, i_tilde], axis = -1)
+        to_expression_truth = np.concatenate((i_se, i_ae), axis = -1)
 
-        tilde_output = e_model(i_se, i_tilde)
-        truth_output = e_model(i_se, i_ae)
+        tilde_output = e_model(to_expression_tilde)
+        truth_output = e_model(to_expression_truth)
+
 
         """
         LOSS - TODO test one loss for all models -vs- different loss function for the different models  
@@ -99,24 +116,18 @@ def train_step(i_se, i_an, i_ae, labels):
                                               e_model.trainable_variables))
 
 
-<<<<<<< HEAD
-=======
 
-path_to_average_neutral = ""
->>>>>>> refs/remotes/origin/master
-
-
-
-I_ae_to_trainstep = np.zeros(batch_size, input_shape[0], input_shape[1], input_shape[2])
+I_ae_to_trainstep = np.zeros((batch_size, input_shape[0], input_shape[1], input_shape[2]), dtype=np.float32)
+EPOCHS = 10
 
 for epoch in range(EPOCHS):
 
-    for I_se, labels in data_gen:
-        label_one_hot = one_hot(labels)
+    for I_se, labels in gen:
+        label_one_hot = one_hot(labels, N_classes)
         for i in range(len(labels)):
-            I_ae_to_trainstep[i] = i_ae[labels[i]]
+            I_ae_to_trainstep[i] = I_ae[int(labels[i])]
 
-        train_step(i_se, i_an, I_ae_to_trainstep, label_one_hot)
+        train_step(I_se, I_an_batch_stack, I_ae_to_trainstep, label_one_hot)
         
         
         
@@ -136,13 +147,5 @@ for epoch in range(EPOCHS):
     #    print('Saving checkpoint for epoch {} at {}'.format(epoch + 1,
     #                                                        ckpt_save_path))
 
-<<<<<<< HEAD
-    print('Time taken for epoch {} is {} sec\n'.format(epoch + 1,
-                                                       time.time() - start))
-
-
-###test
-=======
     #print('Time taken for epoch {} is {} sec\n'.format(epoch + 1,
     #                                                   time.time() - start))
->>>>>>> master

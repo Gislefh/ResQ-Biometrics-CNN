@@ -3,17 +3,13 @@
 """
 
 
-
-
-# Copyright (c) 2016 Satya Mallick <spmallick@learnopencv.com>
-# All rights reserved. No warranty, explicit or implicit, provided.
-
 import os
 import cv2
 import numpy as np
 import math
 import sys
 import dlib
+import matplotlib.pyplot as plt
 
 class CreateAverages:
 
@@ -326,31 +322,61 @@ class CreateAverages:
         # Divide by numImages to get average
         output = output / numImages
 
+        if return_image:
+            return output
+
         # Display result
         cv2.imshow('image', output)
         cv2.waitKey(0)
 
+    def get_iae(self, path, out_shape):
+        iae = []
+        labels = []
+        for cnt, i in enumerate(os.listdir(path)):
+            #if i == 'neutral':
+            #    continue
+            labels.append(i)
+            iae.append(self.show(path +'/' + i, out_shape, return_image = True))
+            print('found', cnt+1, 'images')
+
+        
+        return iae, labels
+
+    
+    def get_ian(self, path, out_shape):
+        for i in os.listdir(path):
+            if i != 'neutral':
+                continue
+            ian = self.show(path +'/' + i, out_shape, return_image = True)
+        return ian
+
+
 
 def one_hot(value, N_classes):
     batch_size = np.shape(value)[0]
-    if N_classes < batch_size:
-        raise Exception("-- FROM SELF -- Can't one hot encode value outside the range")
-
     output = np.zeros((batch_size, N_classes))
     for i in range(batch_size):
-        output[i, value[i]] = 1
+        output[i, int(value[i])] = 1
     return output
 
 if __name__ == '__main__' :
     
     folder_with_landmarks = 'C:/Users/47450/Documents/ResQ Biometrics/Data sets/IF-GAN_averages/test/fear'
+    folder_with_landmarks_all = 'C:/Users/47450/Documents/ResQ Biometrics/Data sets/IF-GAN_averages/test'
     data_path = 'C:/Users/47450/Documents/ResQ Biometrics/Data sets/ExpW/train_small'
     save_averages_path = 'C:/Users/47450/Documents/ResQ Biometrics/Data sets/IF-GAN_averages/test'
     dlib_class_path = 'C:/Users/47450/Documents/ResQ Biometrics/ResQ-Biometrics-CNN/GAN/dlib_classifier/shape_predictor_68_face_landmarks.dat'
     CA = CreateAverages(data_path)
     #CA.show(folder_with_landmarks, out_shape=[256,256])
-    CA.save_landmarks(save_averages_path, dlib_class_path)
-    
+    #CA.save_landmarks(save_averages_path, dlib_class_path)
+    iae_list, labels = CA.get_iae(folder_with_landmarks_all, out_shape=[256,256])
+    ian_list = CA.get_ian(folder_with_landmarks_all, out_shape=[256,256])
+    for cnt, im in enumerate(iae_list):
+        plt.figure(labels[cnt])
+        plt.imshow(im)
+        plt.show()
+    plt.imshow(ian_list)
+    plt.show()
 
 
 
