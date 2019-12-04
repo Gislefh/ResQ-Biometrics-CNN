@@ -99,15 +99,8 @@ def train_step(i_se, i_an, i_ae, labels):
                                               e_model.trainable_variables))
 
 
-<<<<<<< HEAD
-=======
 
-path_to_average_neutral = ""
 
-i_an = path_to_average_neutral # get the average image, not correct
-
-i_ae = np.array(["list","of","class","averages"])
->>>>>>> 939c6b904e2da75b24ab0b307c539f4f2d6189cc
 
 I_ae_to_trainstep = np.zeros(batch_size, input_shape[0], input_shape[1], input_shape[2])
 
