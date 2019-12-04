@@ -73,8 +73,8 @@ def train_step(i_se, i_an, i_ae, labels):
         loss_discriminator = tf.math.negative(tot_gan_loss) # negating the loss to make it maximize the value, as tf wants to minimize - i think. 
         loss_generator = tot_gan_loss
 
-        #e_tilde_loss = e_loss(labels, tilde_output)
-        #e_truth_loss = e_loss(labels, truth_output)
+        # e_tilde_loss = e_loss(labels, tilde_output)
+        # e_truth_loss = e_loss(labels, truth_output)
         e_loss = softmax_cross_entropy(tilde_output, truth_output, labels)
 
     """
@@ -99,6 +99,15 @@ def train_step(i_se, i_an, i_ae, labels):
                                               e_model.trainable_variables))
 
 
+<<<<<<< HEAD
+=======
+
+path_to_average_neutral = ""
+
+i_an = path_to_average_neutral # get the average image, not correct
+
+i_ae = np.array(["list","of","class","averages"])
+>>>>>>> 939c6b904e2da75b24ab0b307c539f4f2d6189cc
 
 I_ae_to_trainstep = np.zeros(batch_size, input_shape[0], input_shape[1], input_shape[2])
 
