@@ -79,7 +79,7 @@ def train_step(i_se, i_an, i_ae, labels):
 
     discriminator_gradients = tape.gradient(loss_discriminator, d_model.trainable_variables)
     
-    expression_classifier_loss = tape.gradient(loss_discriminator, d_model.trainable_variables)
+    expression_gradients = tape.gradient(loss_discriminator, e_model.trainable_variables)
 
     """
     BACKPROB WITH GRADIENTS
@@ -90,6 +90,8 @@ def train_step(i_se, i_an, i_ae, labels):
     discriminator_optimizer.apply_gradients(zip(discriminator_gradients,
                                               d_model.trainable_variables))
 
+    discriminator_optimizer.apply_gradients(zip(expression_gradients,
+                                              e_model.trainable_variables))
 
 
 path_to_average_neutral = ""
