@@ -220,7 +220,8 @@ class ClassificationModel:
             else:
                 layer.trainable = False
 
-        output = layers.Dense(512)(resNet.output)
+        x = layers.Dense(512)(resNet.output)
+        x = 
         model = Model(inputs=resNet.input, outputs=output, name='ResNet50')
         return model
 

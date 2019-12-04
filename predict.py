@@ -1,3 +1,8 @@
+### no gpu?
+import os 
+os.environ["CUDA_VISIBLE_DEVICES"]="-1"   
+####
+
 import sys
 sys.path.insert(0, "classes")
 import tensorflow as tf
@@ -15,26 +20,26 @@ test_path_expw = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\ExpW\
 
 N_channels = 3
 batch_size = 16
-model_shape_shape = (100, 100)
-N_classes = 3
+model_shape_shape = (128, 128)
+N_classes = 6
 X_shape = (batch_size, model_shape_shape[0], model_shape_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
 
 ## create ganerator
-gen_test = Generator(test_path_expw, X_shape, Y_shape, N_classes, N_channels, batch_size, N_images_per_class=400, class_list = ['angry', 'happy', 'neutral'])
+gen_test = Generator(test_path_expw, X_shape, Y_shape, N_classes, N_channels, batch_size, N_images_per_class=400, class_list=['angry', 'disgust', 'happy', 'neutral', 'sad', 'surprise'])
 N_data = gen_test.get_length_data()
 test_gen = gen_test.flow_from_dir(set = 'test')
 
 labels = gen_test.get_classes()
 
-model = load_model("Models\\model_ferCh_denseNet_2.h5")
+model = load_model("Models\\model_expw_preTr_Xcept_3.h5")
 P = Predict(model, labels = labels)
 
 #print(model.metrics_names)
 #print(model.evaluate_generator(test_gen, steps=N_data/batch_size, callbacks=None, max_queue_size=10, workers=1, use_multiprocessing=False, verbose=1))
 
 
-#P.pred_from_cam()
+P.pred_from_cam()
 #P.show_wrongly_labeled(test_gen)
 P.conf_matrix(test_gen, N_data)
 exit()

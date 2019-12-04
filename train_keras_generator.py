@@ -19,7 +19,7 @@ import os
 ## paths
 train_path = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\ExpW\\train'
 
-new_model_name = 'model_expw_inception_4.h5'
+new_model_name = 'model_expw_inception_5.h5'
 save_model_path = 'Models\\'
 
 
@@ -57,10 +57,10 @@ data_gen_val = ImageDataGenerator(rotation_range=30, width_shift_range=0.05, hei
 
 
 #inceptionv3
-model = get_inception_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes, show_trainability = False)
+#model = get_inception_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes, show_trainability = False)
 
 # denseNet
-#model = get_denseNet_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes)
+model = get_denseNet_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes)
 
 #vgg16 w imagenet + empty dense layers
 #model = get_vgg_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes, freeze_layers=False)

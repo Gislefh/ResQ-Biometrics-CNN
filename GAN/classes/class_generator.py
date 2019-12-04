@@ -12,24 +12,20 @@ class DataGenerator:
         self.data_path = data_path
         self.labels = None
 
-
         # Functions
         self.image_paths = self.__find_images()
 
+
     def flow_from_dir(self, batch_size, image_shape, average_neutral_image, average_expression_faces): # average_expression_faces needs to be in the same order as label
-        I_se = np.zeros((batch_size, image_shape[0], image_shape[1], image_shape[2]))
-        I_an = np.zeros((batch_size, image_shape[0], image_shape[1], image_shape[2]))
-        I_ae = np.zeros((batch_size, image_shape[0], image_shape[1], image_shape[2]))
-        label_out = np.zeros((batch_size, len(self.labels)))
+        I_se = np.zeros((batch_size, image_shape[0], image_shape[1], image_shape[2]), dtype=np.float32)
+        label_out = np.zeros((batch_size))
 
         while True:
             for image_name, label in self.image_paths:
-                I_se[i%batch_size] = __open_images(path, image_shape)
-                I_an[i%batch_size] = average_neutral_image
-                I_ae[i%batch_size] = average_expression_faces[label]
-
+                I_se[i%batch_size] = __open_images(image_name, image_shape)
+                label_out[i%batch_size] = label
                 if i%batch_size == batch_size-1:
-                    yield I_an, I_se, I_ae
+                    yield I_se, label_out
 
 
 
