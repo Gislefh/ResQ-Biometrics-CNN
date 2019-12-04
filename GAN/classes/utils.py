@@ -20,6 +20,8 @@ class CreateAverages:
     def __init__(self, data_path):
         self.data_path = data_path
 
+
+
     def save_landmarks(self, save_averages_path, dlib_classifier_path):
         for folder in os.listdir(self.data_path):
             if folder not in os.listdir(save_averages_path):
@@ -187,6 +189,7 @@ class CreateAverages:
         return dst
 
 
+
     # Warps and alpha blends triangular regions from img1 and img2 to img
     def __warpTriangle(self, img1, img2, t1, t2) :
 
@@ -326,6 +329,17 @@ class CreateAverages:
         # Display result
         cv2.imshow('image', output)
         cv2.waitKey(0)
+
+
+def one_hot(value, N_classes):
+    batch_size = np.shape(value)[0]
+    if N_classes < batch_size:
+        raise Exception("-- FROM SELF -- Can't one hot encode value outside the range")
+
+    output = np.zeros((batch_size, N_classes))
+    for i in range(batch_size):
+        output[i, value[i]] = 1
+    return output
 
 if __name__ == '__main__' :
     
