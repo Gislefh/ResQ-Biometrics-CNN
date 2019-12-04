@@ -233,20 +233,21 @@ class ClassificationModel:
 
     def __mobileNetv2_model(self):
         start = layers.Input(shape = [self.input_shape[0], self.input_shape[1], self.input_shape[2]*2])
-        onexone_conv = layers.Conv2D(3, (1,1))(start)
+        onexone_conv = layers.SeparableConv2D(3, (1,1))(start)
         #onexone_conv = layers.SeparableConv2D(3, (1,1))(start)
         mobileNetv2 = tf.keras.applications.MobileNetV2(input_shape=self.input_shape, alpha=1.0, include_top=False,
-                                                        weights='imagenet', pooling='max')
+                                                        weights='imagenet', pooling='max')(onexone_conv)
 
-        for layer in mobileNetv2.layers:
-            if layer.name == 'block_8_add':
-                break
-            else:
-                layer.trainable = False
-        x = mobileNetv2(onexone_conv)
-        x = layers.Dense(512)(mobileNetv2.output)
+        #for layer in mobileNetv2.layers:
+        #    if layer.name == 'block_8_add':
+        #        break
+        #    else:
+        #        layer.trainable = False
+        
+        #x = mobileNetv2(onexone_conv)
+        x = layers.Dense(512)(mobileNetv2)
         output = layers.Dense(self.N_classes)(x)
-        model = Model(inputs=mobileNetv2.input, outputs=output, name='MobileNetV2')
+        model = Model(inputs=start, outputs=output, name='MobileNetV2')
 
         return model
 

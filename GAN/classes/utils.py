@@ -339,7 +339,6 @@ class CreateAverages:
             iae.append(self.show(path +'/' + i, out_shape, return_image = True))
             print('found', cnt+1, 'images')
 
-        
         return iae, labels
 
     

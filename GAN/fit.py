@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 
 
+
 sys.path.insert(0, "classes")
 from class_model import GeneratorModels, DiscriminatorModel, ClassificationModel
 from class_loss import e_loss, cGAN_loss, g_loss, l1loss, softmax_cross_entropy
@@ -53,31 +54,29 @@ DG = DataGenerator(data_path)
 labels_data_gen = DG.get_labels()
 gen = DG.flow_from_dir(batch_size, input_shape)
 
-#print(labels_data_gen, labels_iae)
-#exit()
-#@tf.function # <- ditch this?
+
+@tf.function # <- ditch this? - no or maybe - no
 def train_step(i_se, i_an, i_ae, labels):
     # persistent is set to True because the tape is used more than
     # once to calculate the gradients.
 
-    with tf.GradientTape(persistent=True) as disc_tape, tf.GradientTape(persistent=True) as gen_tape, tf.GradientTape(persistent=True) as exp_tape:
+    with tf.GradientTape() as disc_tape, tf.GradientTape() as gen_tape, tf.GradientTape() as exp_tape:
 
         """
         FEED-FORWARD
         """
-        to_generator = np.concatenate((i_se, i_an), axis = -1)
-        i_tilde = g_model(to_generator)
-        print(type(i_tilde))
+        to_generator = tf.concat([i_se, i_an], axis = -1)
+        i_tilde = g_model(to_generator, training=True)
 
-        d_real = d_model([i_an, i_se, i_ae])
-        d_fake = d_model([i_an, i_se, i_tilde])
+        d_real = d_model([i_an, i_se, i_ae], training=True)
+        d_fake = d_model([i_an, i_se, i_tilde], training=True)
 
-        print(i_se.shape, i_tilde.shape, i_ae.shape)
+
         to_expression_tilde = tf.concat([i_se, i_tilde], axis = -1)
-        to_expression_truth = np.concatenate((i_se, i_ae), axis = -1)
+        to_expression_truth = tf.concat([i_se, i_ae], axis = -1)
 
-        tilde_output = e_model(to_expression_tilde)
-        truth_output = e_model(to_expression_truth)
+        tilde_output = e_model(to_expression_tilde, training=True)
+        truth_output = e_model(to_expression_truth, training=True)
 
 
         """
@@ -120,17 +119,28 @@ def train_step(i_se, i_an, i_ae, labels):
 I_ae_to_trainstep = np.zeros((batch_size, input_shape[0], input_shape[1], input_shape[2]), dtype=np.float32)
 EPOCHS = 10
 
+
 for epoch in range(EPOCHS):
 
-    for I_se, labels in gen:
+    for step_cnt, (I_se, labels) in enumerate(gen):
         label_one_hot = one_hot(labels, N_classes)
         for i in range(len(labels)):
             I_ae_to_trainstep[i] = I_ae[int(labels[i])]
 
         train_step(I_se, I_an_batch_stack, I_ae_to_trainstep, label_one_hot)
-        
-        
-        
+
+        if step_cnt > 10:
+            import matplotlib.pyplot as plt
+            to_generator = np.concatenate((I_se, I_an_batch_stack), axis = -1)
+            i_tilde = g_model.predict(to_generator, batch_size=batch_size, steps=1)
+            for i in range(i_tilde.shape[0]):
+                plt.imshow(i_tilde[i])
+                plt.show()
+
+
+
+        print('step:', step_cnt)
+
         
         
         #if n % 10 == 0:
