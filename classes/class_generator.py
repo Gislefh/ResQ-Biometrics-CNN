@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from scipy import ndimage
 from class_utils import one_hot
 
-from pytictoc import TicToc
 from tqdm import tqdm
 import dlib
 import csv
@@ -75,6 +74,9 @@ class Generator:
 		tmp_train_set = []
 
 		for folder in os.listdir(self.path):
+			if (folder.split('.')[-1] == "txt"):
+				continue
+
 			cnt_img_per_class = 0
 			if self.class_list:
 				if folder not in self.class_list:
@@ -140,7 +142,9 @@ class Generator:
 			image_list = tot_list.copy()
 			shuffle(choise_list)
 
+
 			for i in range(len(image_list)):
+
 				##choose random image from list
 				#choice = np.random.choice(len(image_list[:, 0]))
 				choice = choise_list[i]
@@ -161,9 +165,11 @@ class Generator:
 						except:
 							print('Error when converting from BGR to RGB for image at location:', tot_list[choice, 0])
 
+				self.image = self.__im_reshape(self.image.shape, self.image)
+
 				#normalize image to [0,1]
 				self.image = np.clip(self.image / 255, 0, 1)
-			
+
 				### add augmentation	
 				if (set == 'train') or (set == 'val' and augment_validation):
 					for j, aug_method in enumerate(self.aug_method):
@@ -171,12 +177,13 @@ class Generator:
 							aug_method()
 						else:
 							aug_method(self.aug_args[j])
-						
-				## reshape image
-				if self.image.shape != self.X[0].shape:
-					self.X[i%self.batch_size] = self.__im_reshape(self.image.shape, self.image)
-				else:
-					self.X[i%self.batch_size] = self.image
+
+				# ## reshape image
+				# if self.image.shape != self.X[0].shape:
+				# 	self.X[i%self.batch_size] = self.__im_reshape(self.image.shape, self.image)
+				# else:
+				self.X[i%self.batch_size] = self.image
+
 
 				## one hot encode ground truth
 				if self.class_list:
