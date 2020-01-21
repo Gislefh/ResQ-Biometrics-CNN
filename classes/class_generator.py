@@ -112,7 +112,7 @@ class Generator:
 	train_val_split: how much of the data thats used as validaion
 	'''
 
-	def flow_from_dir(self, set = 'train', augment_validation = True):
+	def flow_from_dir(self, set = 'train', augment_validation = True, crop = False):
 		
 
 		if set == 'test':
@@ -164,10 +164,11 @@ class Generator:
 							self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
 						except:
 							print('Error when converting from BGR to RGB for image at location:', tot_list[choice, 0])
-
+				if crop:
+					self.__crop()
 				self.image = self.__im_reshape(self.image.shape, self.image)
 
-				#normalize image to [0,1]
+				# normalize image to [0,1]
 				self.image = np.clip(self.image / 255, 0, 1)
 
 				### add augmentation	
@@ -177,6 +178,8 @@ class Generator:
 							aug_method()
 						else:
 							aug_method(self.aug_args[j])
+
+
 
 				# ## reshape image
 				# if self.image.shape != self.X[0].shape:
@@ -456,6 +459,10 @@ class Generator:
 	''
 	#### --- Image aug--
 
+
+
+
+
 	#max_abs_angle_deg: maximum angle of rotation. positive scalar
 	def add_rotate(self, max_abs_angle_deg = 10):
 		self.aug_method.append(self.__rotate)
@@ -483,7 +490,35 @@ class Generator:
 		self.aug_method.append(self.__zoom)
 		self.aug_args.append(zoom_range)		
 
-	#-----
+	def add_noise(self, noise=0.2):
+		self.aug_method.append(self.__noise)
+		self.aug_args.append(noise)
+
+	def __noise(self, noise_sigma):
+		# self.image = np.uint8(self.image)
+		h, w, d = self.image.shape
+
+		# cv2.imshow("kek", self.image)
+		# cv2.waitKey(0)
+		#
+		# cv2.imshow("kek", (np.random.randn(h, w, d) * noise_sigma))
+		# cv2.waitKey(0)
+
+		self.image[:, :, 0] += np.random.randn(h, w) * noise_sigma
+		self.image[:, :, 1] += np.random.randn(h, w) * noise_sigma
+		self.image[:, :, 2] += np.random.randn(h, w) * noise_sigma
+
+		# cv2.imshow("kek", self.image)
+		# cv2.waitKey(0)
+		#
+		# exit()
+
+	def __crop(self):
+		im_shape = np.shape(self.image)
+		self.image = self.image[:, int(im_shape[1]/4):int(3*im_shape[1]/4)]
+
+
+
 	def __gamma_transfrom(self, args):
 		gamma = np.random.uniform(args[0], args[1])
 		self.image = np.clip(np.power(self.image, gamma), 0, 1)

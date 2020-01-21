@@ -74,7 +74,7 @@ class SecModel:
                      input_shape=input_shape))
         for i in range(layers):
             M.add(Conv2D(np.ceil(filters * i), (np.ceil(1 * filter_size), np.ceil(1 * filter_size)), activation='relu'))
-			# M.add(Conv2D(np.ceil(filters*2*i), (np.ceil(1 * filter_size), np.ceil(1 * filter_size)), activation='relu'))
+            # M.add(Conv2D(np.ceil(filters*2*i), (np.ceil(1 * filter_size), np.ceil(1 * filter_size)), activation='relu'))
             M.add(MaxPooling2D(pool_size=(2, 2)))
             M.add(Dropout(dropout_rate))
 
