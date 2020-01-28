@@ -306,13 +306,7 @@ class Generator:
 							aug_method(self.aug_args[j])
 
 				yield self.X_out, self.Y_out
-				
 
-
-		
-			
-
-		
 	### gets facial images from the web, displayes them and saves them in save_path in the chosen folder of the class. 
 	def generator_from_web(self):
 
@@ -414,7 +408,6 @@ class Generator:
 						#cv2.imwrite(path + str(counter) + '.jpg', imlist[2])
 					print('Saved as:', folder_list[chosen_class])
 
-
 	## yields a face from the google dataset	
 	def face_from_web_gen(self, start_row = 0):
 		prev_urls = []
@@ -455,13 +448,7 @@ class Generator:
 
 					yield image 
 
-
-	''
 	#### --- Image aug--
-
-
-
-
 
 	#max_abs_angle_deg: maximum angle of rotation. positive scalar
 	def add_rotate(self, max_abs_angle_deg = 10):
@@ -501,8 +488,6 @@ class Generator:
 	def __crop(self):
 		im_shape = np.shape(self.image)
 		self.image = self.image[:, int(im_shape[1]/4):int(3*im_shape[1]/4)]
-
-
 
 	def __gamma_transfrom(self, args):
 		gamma = np.random.uniform(args[0], args[1])

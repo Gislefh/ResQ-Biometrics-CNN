@@ -78,7 +78,7 @@ def get_Xception(input_shape, N_classes, freeze_to_layer='all_but_dense'):
                                                       pooling='max')
 
     x = Dense(128, activation='relu')(init_model.output)
-    x = Dropout(0.5)(x)
+    x = Dropout(0.4)(x)
     preds = Dense(N_classes, activation='softmax')(x)
     model = Model(init_model.input, preds)
 
