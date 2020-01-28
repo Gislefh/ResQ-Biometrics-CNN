@@ -3,7 +3,7 @@ import zipfile
 import os
 import cv2
 import matplotlib.pyplot as plt
-from scipy import ndimage
+from scipy import ndimage, math
 from class_utils import one_hot
 
 from tqdm import tqdm
@@ -495,23 +495,8 @@ class Generator:
 		self.aug_args.append(noise)
 
 	def __noise(self, noise_sigma):
-		# self.image = np.uint8(self.image)
 		h, w, d = self.image.shape
-
-		# cv2.imshow("kek", self.image)
-		# cv2.waitKey(0)
-		#
-		# cv2.imshow("kek", (np.random.randn(h, w, d) * noise_sigma))
-		# cv2.waitKey(0)
-
-		self.image[:, :, 0] += np.random.randn(h, w) * noise_sigma
-		self.image[:, :, 1] += np.random.randn(h, w) * noise_sigma
-		self.image[:, :, 2] += np.random.randn(h, w) * noise_sigma
-
-		# cv2.imshow("kek", self.image)
-		# cv2.waitKey(0)
-		#
-		# exit()
+		self.image += np.float64(np.random.randn(h, w, d) * noise_sigma)
 
 	def __crop(self):
 		im_shape = np.shape(self.image)

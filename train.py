@@ -22,7 +22,7 @@ import os
 
 ## paths
 train_path = 'C:\\ML\\Dataset\\videoframes'
-new_model_name = 'model_expw_preTr_Xcept_0.h5'
+new_model_name = 'model_expw_preTr_Xcept_1.h5'
 save_model_path = 'C:\\ML\\Models\\CNN\\'
 
 if new_model_name in os.listdir(save_model_path):
@@ -33,7 +33,7 @@ if new_model_name in os.listdir(save_model_path):
 N_channels = 3
 N_images_per_class = None
 batch_size = 32
-image_shape = (144, 128)
+image_shape = (72*3, 64*3)
 N_classes = 8
 X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
@@ -56,11 +56,11 @@ train_gen = gen_train.flow_from_dir(set='train', crop=True)
 val_gen = gen_train.flow_from_dir(set='val', augment_validation=False, crop=True)
 
 '''TO SHOW IMAGES AFTER AUGMENTATION'''
-for x, y in train_gen:
-    plt.imshow(x[0])
-    plt.show()
-
-exit()
+# for x, y in train_gen:
+#     plt.imshow(x[0])
+#     plt.show()
+#
+# exit()
 
 
 
@@ -89,9 +89,9 @@ model = get_Xception(input_shape=(image_shape[0], image_shape[1], N_channels), N
 ## use pretrained model
 # model = add_classes_to_model('Models\\model_9.h5', 3, 10)
 
-## callbacks
-model.summary()
-exit()
+# ## callbacks
+# model.summary()
+# exit()
 
 early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
                                            min_delta=0,
@@ -112,7 +112,7 @@ save_best = keras.callbacks.ModelCheckpoint(save_model_path + new_model_name,
 ## --save as date--
 tensorboard_name = datetime.now().strftime("%Y%m%d-%H%M%S")
 
-tensorboard = keras.callbacks.TensorBoard(log_dir='C:\\ML\\Models\\CNN\\logs\\' + tensorboard_name,
+tensorboard = keras.callbacks.TensorBoard(log_dir='C:\\ML\\Models\\CNN\\new\\' + tensorboard_name,
                                           histogram_freq=0,
                                           batch_size=batch_size,
                                           write_graph=True,
