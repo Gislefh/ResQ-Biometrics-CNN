@@ -33,10 +33,7 @@ class Generator:
 		self.aug_args = []
 		self.train_val_split = train_val_split 	#defaults to 0.3
 		self.N_images_per_class = N_images_per_class
-		if class_list:
-			self.class_list = class_list
-		else:
-			self.class_list = []
+		self.class_list = (class_list if class_list else []) # En sneaky Ternery :D
 
 	#returns the classes (folders) in the directory
 	def get_classes(self):
@@ -134,20 +131,20 @@ class Generator:
 			print("select either: 'train', 'val' or 'test'")
 			exit()
 		
-		choise_list = list(range(len(tot_list)))
+		choice_list = list(range(len(tot_list)))
 		
 
 		while True:
 
 			image_list = tot_list.copy()
-			shuffle(choise_list)
+			shuffle(choice_list)
 
 
 			for i in range(len(image_list)):
 
 				##choose random image from list
 				#choice = np.random.choice(len(image_list[:, 0]))
-				choice = choise_list[i]
+				choice = choice_list[i]
 				orig_ch = cv2.imread( image_list[choice, 0]).shape[-1]
 				label = int(image_list[choice, 1])
 
@@ -181,11 +178,11 @@ class Generator:
 
 
 
-				# ## reshape image
-				# if self.image.shape != self.X[0].shape:
-				# 	self.X[i%self.batch_size] = self.__im_reshape(self.image.shape, self.image)
-				# else:
-				self.X[i%self.batch_size] = self.image
+				## reshape image
+				if self.image.shape != self.X[0].shape:
+					self.X[i%self.batch_size] = self.__im_reshape(self.image.shape, self.image)
+				else:
+					self.X[i%self.batch_size] = self.image
 
 
 				## one hot encode ground truth
@@ -483,7 +480,7 @@ class Generator:
 
 	def __noise(self, noise_sigma):
 		h, w, d = self.image.shape
-		self.image += np.float64(np.random.randn(h, w, d) * noise_sigma)
+		self.image = self.image + np.float64(np.random.randn(h, w, d) * noise_sigma)
 
 	def __crop(self):
 		im_shape = np.shape(self.image)
@@ -524,12 +521,10 @@ class Generator:
 		gamma = np.random.uniform(args[0], args[1])
 		self.X_out = np.power(self.X_out, gamma)
 
-
 	def __BW_rotate(self, max_angle):	
 		angle = 2 * max_angle * np.random.rand() - max_angle 
 		self.X_out =  ndimage.rotate(self.X_out, angle, axes=[1,2], reshape = False, order = 1)
 
-	
 	def __BW_shift(self, max_shift):
 		shift_x = np.random.uniform(-self.image.shape[0], self.image.shape[0]) * max_shift
 		shift_y = np.random.uniform(-self.image.shape[1], self.image.shape[1]) * max_shift
@@ -539,7 +534,6 @@ class Generator:
 		if np.random.rand() > 0.5:
 			self.X_out = np.flip(self.X_out, axis = 2)
 
-
 	def __BW_zoom(self, args): #dont use zoom
 		if np.random.rand() > 0.5:
 			zoom_range_x = args[0] + (np.random.rand() * (args[1]- args[0]))
@@ -548,10 +542,8 @@ class Generator:
 			zoom_range_x = 1
 			zoom_range_y = args[0] + (np.random.rand() * (args[1]- args[0]))
 
-
 		#TODO fix so that self.X_out don't change shape
 		#self.X_out = ndimage.zoom(self.X_out, (1, zoom_range_x, zoom_range_y, 1), order = 1)
-		
 
 	######## ---- utils ---
 
@@ -642,10 +634,6 @@ class Generator:
 							else: 
 								continue
 		"""
-	
-
-
-
 
 if __name__ == '__main__':
 	## paths

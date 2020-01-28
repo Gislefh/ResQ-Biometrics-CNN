@@ -18,7 +18,7 @@ from keras.models import load_model
 import h5py
 import tensorflow as tf
 import os
-# os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 ## paths
 train_path = 'C:\\ML\\Dataset\\videoframes'
