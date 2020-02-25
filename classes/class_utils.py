@@ -6,16 +6,6 @@ from keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D, Input, G
 from scipy import ndimage
 import matplotlib.pyplot as plt
 
-"""
---- From numerical value to one hot encoded ---
-IN
-	value: numerical value of class. int
-	N_classes: number of classes. int
-
-OUT
-	one_hot: one hot encoded 1d-array
-"""
-
 
 def one_hot(value, N_classes):
     if N_classes < value:
@@ -35,7 +25,7 @@ def plot_gen(gen):
 
 
 def get_vgg16_from_keras(input_shape, N_classes):
-    if input_shape == None:
+    if input_shape is None:
         inc_top = True
         inp_shape = None
 
@@ -71,9 +61,20 @@ def get_vgg_w_imnet(input_shape, N_classes, show_trainability=True, freeze_layer
     return model
 
 
+def get_MobileNetV2(input_shape, N_classes):
+    init_model = keras.applications.mobilenet_v2.MobileNetV2(input_shape=input_shape, include_top=False,
+                                                             weights='imagenet',
+                                                             classes=N_classes,
+                                                             pooling='max')
+
+    x = Dense(128, activation='relu')(init_model.output)
+    preds = Dense(N_classes, activation='softmax')(x)
+    model = Model(init_model.input, preds)
+
+    return model
+
+
 def get_Xception(input_shape, N_classes, freeze_to_layer='all_but_dense'):
-
-
     init_model = keras.applications.xception.Xception(include_top=False, weights='imagenet', input_shape=input_shape,
                                                       pooling='max')
 
@@ -179,15 +180,3 @@ class DataAug:
     def __gamma_transfrom(self, image):
         gamma = np.random.uniform(self.gamma_transform_args[0], self.gamma_transform_args[1])
         return np.clip(np.power(self.image, gamma), 0, 1)
-
-
-
-
-
-
-
-
-
-
-
-

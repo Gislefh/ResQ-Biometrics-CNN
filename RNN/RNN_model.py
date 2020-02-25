@@ -1,48 +1,32 @@
-from keras.applications import inception_v3, vgg16
-from keras.layers import CuDNNLSTM
+from keras import Sequential
+from keras.layers import CuDNNLSTM, Conv2D, MaxPooling2D, Dropout, Flatten, Dense, ConvLSTM2D, LSTM, TimeDistributed, GlobalAveragePooling3D ,Conv3D
+
+
 class RnnCnnModel:
+    def __init__(self, n_classes):
+        self.n_classes = n_classes
 
-    def __init__(self, input_shape):
-        self.input_shape = input_shape
-        self.model = None
+    def rnnCnnModel(self, input_shape):
+        model = Sequential()
+        model.add(ConvLSTM2D(filters=40, kernel_size=(3, 3),
+                             input_shape=(100, input_shape[0], input_shape[1], input_shape[2]),
+                             padding='same', return_sequences=True))
 
-        
-    """
-    Choosing witch CNN network to use as the base model.
-    """
-    def add_base_network(self, base_model = 'inception', pree_trained = True, pooling = 'max'):
-        if pree_trained:
-            W = 'imagenet'
-        else:
-            W = None
+        model.add(ConvLSTM2D(filters=40, kernel_size=(3, 3),
+                             padding='same', return_sequences=True))
 
-        if base_model == 'inception':
-            self.model = inception_v3.InceptionV3(include_top=False, weights=W, input_shape=self.input_shape, pooling=pooling)
+        model.add(ConvLSTM2D(filters=40, kernel_size=(3, 3),
+                             padding='same', return_sequences=True))
 
-        elif base_model == 'vgg16':
-            self.model = vgg16.VGG16(include_top=False, weights=W, input_shape=self.input_shape, pooling=pooling)
+        model.add(ConvLSTM2D(filters=40, kernel_size=(3, 3),
+                             padding='same', return_sequences=True))
 
-        else:
-            raise Exception('-- FROM SELF -- Choose from the list of base models')
-        
+        model.add(Conv3D(filters=1, kernel_size=(3, 3, 3),
+                         activation='sigmoid',
+                         padding='same', data_format='channels_last'))
+        model.add(GlobalAveragePooling3D())
+        model.add(Dense(100))
+        model.add(Dense(8, activation="softmax"))
+        model.compile(loss='binary_crossentropy', optimizer='adam')
 
-    def add_RNN(self):
-        if not self.model:
-            raise Exception('-- FROM SELF -- Add a base model first')
-
-        input_ = self.model.output
-        
-
-
-class PureRnn:
-
-    def __init__(self, input_shape):
-        self.input_shape = 
-        
-
-
-
-if __name__ == '__main__':
-    input_shape = (128,128,3)
-    model_class = RnnCnnModel(input_shape)
-    model_class.add_base_network()
+        return model

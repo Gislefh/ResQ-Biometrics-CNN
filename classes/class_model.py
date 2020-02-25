@@ -3,7 +3,7 @@ import tensorflow
 import numpy as np
 
 from keras.models import Sequential, Model
-from keras.layers import Dense, Dropout, Flatten, GlobalMaxPooling2D, Conv2D, MaxPooling2D, Input
+from keras.layers import Dense, Dropout, Flatten, GlobalMaxPooling2D, Conv2D, MaxPooling2D, Input, Permute, Reshape
 
 
 class SecModel:
@@ -82,6 +82,8 @@ class SecModel:
      #       input = (input - (filter_size - 1)) / 2
 
         return M
+
+
 
     def random_CNN(self, input_shape):
         M = Sequential()

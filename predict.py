@@ -1,9 +1,11 @@
 ### no gpu?
-import os 
-os.environ["CUDA_VISIBLE_DEVICES"]="-1"   
+import os
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 ####
 
 import sys
+
 sys.path.insert(0, "classes")
 import tensorflow as tf
 import keras
@@ -16,47 +18,35 @@ import matplotlib.pyplot as plt
 
 ### consts
 test_path_ferCh = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\face-expression-recognition-dataset\\images\\validation'
-test_path_expw = 'C:\\Users\\47450\\Documents\\ResQ Biometrics\\Data sets\\ExpW\\validation'
+test_path_expw = 'C:/ML/Dataset/ExpW_zip/ExpW/'
 
 N_channels = 3
-batch_size = 16
-model_shape_shape = (128, 128)
-N_classes = 6
-X_shape = (batch_size, model_shape_shape[0], model_shape_shape[1], N_channels)
+N_images_per_class = None
+batch_size = 1
+image_shape = (72 * 3, 64 * 3)
+N_classes = 7
+X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
+val_size = 0
 
 ## create ganerator
-gen_test = Generator(test_path_expw, X_shape, Y_shape, N_classes, N_channels, batch_size, N_images_per_class=400, class_list=['angry', 'disgust', 'happy', 'neutral', 'sad', 'surprise'])
+
+gen_test = Generator(test_path_expw, X_shape, Y_shape, N_classes, N_channels, batch_size, train_val_split=val_size,
+                      N_images_per_class=N_images_per_class)
+
 N_data = gen_test.get_length_data()
-test_gen = gen_test.flow_from_dir(set = 'test')
+test_gen = gen_test.flow_from_dir(set='test')
 
 labels = gen_test.get_classes()
 
-model = load_model("Models\\model_expw_preTr_Xcept_3.h5")
-P = Predict(model, labels = labels)
+model = load_model("C:/ML/Models/XceptionV3_expw_0.h5")
+save_path = "C:\\ML\\Dataset\\expw_improved\\"
 
-#print(model.metrics_names)
-#print(model.evaluate_generator(test_gen, steps=N_data/batch_size, callbacks=None, max_queue_size=10, workers=1, use_multiprocessing=False, verbose=1))
+names = os.listdir(test_path_expw)
+for i, (x, y) in enumerate(test_gen):
+    pred = model.predict(x)
+    if np.argmax(pred) == y:
+        plt.imsave(save_path + "/" + names[y] + "/", str(i) + ".jpg")
 
-
-P.pred_from_cam()
-#P.show_wrongly_labeled(test_gen)
-P.conf_matrix(test_gen, N_data)
-exit()
-
-
-
-
-
-for x,y in test_gen:
-    for i in range(x.shape[-1]):
-        
-        gt = np.argmax(y[i])
-        pred = np.argmax(model.predict(x[i:i+1]))
-        #print(labels[gt], labels[np.argmax(pred)])
-        if pred == gt:
-            cnt_correct += 1
-        #plt.imshow(x[i, :, :, 0], cmap = 'gray')
-        #plt.show()
-        cnt_tot += 1
-    print(cnt_correct/cnt_tot)
+    if i == N_data:
+        break
