@@ -7,15 +7,6 @@ from scipy import ndimage
 import matplotlib.pyplot as plt
 
 
-def one_hot(value, N_classes):
-    if N_classes < value:
-        raise Exception("-- FROM SELF -- Can't one hot encode value outside the range")
-
-    one_hot = np.zeros((N_classes))
-    one_hot[value] = 1
-    return one_hot
-
-
 def plot_gen(gen):
     for x, y in gen:
         for i in range(x.shape[0]):

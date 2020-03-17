@@ -1,6 +1,7 @@
 <component name="ProjectDictionaryState">
   <dictionary name="mathi">
     <words>
+      <w>softmax</w>
       <w>tensorboard</w>
       <w>videoframes</w>
       <w>xception</w>
