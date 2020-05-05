@@ -18,9 +18,6 @@ import h5py
 import tensorflow as tf
 import os
 
-# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-
-## paths
 train_path = 'C:\\ML\\Dataset\\ExpW_zip\\ExpW\\'
 new_model_name = 'XceptionV3_videoframes_1'
 save_model_path = 'C:\\ML\\Models\\CNN\\'
