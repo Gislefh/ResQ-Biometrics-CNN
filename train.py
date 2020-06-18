@@ -1,142 +1,150 @@
-import sys
-
-sys.path.insert(0, "classes")
 from datetime import datetime
 import numpy as np
 import tensorflow as tf
-
-tf.compat.v1.disable_v2_behavior()
-import keras
 import matplotlib.pyplot as plt
-
-from class_model import SecModel
-from class_generator import Generator
-from class_utils import get_vgg16_from_keras, get_vgg_w_imnet, add_classes_to_model, meta_data, get_Xception, get_MobileNetV2
-
-from keras.models import load_model
-import h5py
-import tensorflow as tf
+import pandas as pd
 import os
+import seaborn as sb
 
-# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+from classes.class_generator import Generator
+from classes.class_utils import get_inception_w_imnet
 
-## paths
-train_path = 'C:\\ML\\Dataset\\ExpW_zip\\ExpW\\'
-new_model_name = 'XceptionV3_videoframes_1'
-save_model_path = 'C:\\ML\\Models\\CNN\\'
+train_path = '../Data sets/kmeans_small/'
+new_model_name = 'classifier_cluster_0'
+save_model_path = 'models\\'
 
 if new_model_name in os.listdir(save_model_path):
     print('Model name exists. Change the model name')
-    # exit()
 
-## consts
+# consts
 N_channels = 3
 N_images_per_class = 4000
-batch_size = 32
-# image_shape = (72 * 3, 64 * 3)
-image_shape = (160, 160)
-N_classes = 8
+batch_size = 150
+image_shape = (128, 128)
+N_classes = 15
 X_shape = (batch_size, image_shape[0], image_shape[1], N_channels)
 Y_shape = (batch_size, N_classes)
 val_size = 0.2
 
-### generator
-
-gen_train = Generator(train_path, X_shape, Y_shape, N_classes, N_channels, batch_size, train_val_split=val_size,
+gen_train = Generator(train_path,
+                      X_shape,
+                      Y_shape,
+                      N_classes,
+                      N_channels,
+                      batch_size,
+                      train_val_split=val_size,
                       N_images_per_class=N_images_per_class)
 
-gen_train.add_noise(0.25)
+gen_train.add_noise(0.1)
 gen_train.add_rotate(max_abs_angle_deg=30)
 gen_train.add_gamma_transform(0.5, 1.5)
 gen_train.add_flip()
 
-# gen_train.add_zoom(zoom_range= [0.2,2])
-
 train_gen = gen_train.flow_from_dir(set='train', crop=False)
 val_gen = gen_train.flow_from_dir(set='val', augment_validation=False, crop=False)
 
-'''TO SHOW IMAGES AFTER AUGMENTATION'''
 # for x, y in train_gen:
 #     plt.imshow(x[0])
 #     plt.show()
-#
-# exit()
 
+model = get_inception_w_imnet(input_shape=(image_shape[0], image_shape[1], N_channels), N_classes=N_classes,
+                              freeze_layers=True)
 
-### -- get new model
-# m = SecModel(N_classes)
-# model = m.random_CNN(input_shape = (image_shape[0], image_shape[1], N_channels))
+early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
+                                              min_delta=0,
+                                              patience=10,
+                                              verbose=0,
+                                              mode='auto',
+                                              baseline=None,
+                                              restore_best_weights=True)
 
-### -- vgg16 + empty
-# model = get_vgg_w_imnet((image_shape[0], image_shape[1], N_channels), N_classes)
+save_best = tf.keras.callbacks.ModelCheckpoint(save_model_path + new_model_name,
+                                               monitor='val_loss',
+                                               verbose=1,
+                                               save_best_only=True,
+                                               save_weights_only=False,
+                                               mode='min',
+                                               save_freq='epoch')
 
-### MobileNetV2
-# model = get_MobileNetV2((image_shape[0], image_shape[1], N_channels), N_classes)
-
-### Xception
-# model = get_Xception(input_shape=(image_shape[0], image_shape[1], N_channels), N_classes=N_classes,freeze_to_layer="add_7")
-
-
-### -- fresh vgg
-# model = get_vgg16_from_keras((image_shape[0], image_shape[1], N_channels), N_classes)
-# model.save(save_model_path + new_model_name)
-# model = keras.applications.vgg16.VGG16(include_top=False, weights= None, input_tensor=None, input_shape=(image_shape[0], image_shape[1], N_channels), pooling=None, classes=N_classes)
-
-### --- load model
-model = load_model('C:\\ML\\Models\\CNN\\XceptionV3_videoframes_1.h5')
-
-## use pretrained model
-# model = add_classes_to_model('Models\\model_9.h5', 3, 10)
-
-# ## callbacks
-model.summary()
-exit()
-
-early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
-                                           min_delta=0,
-                                           patience=10,
-                                           verbose=0,
-                                           mode='auto',
-                                           baseline=None,
-                                           restore_best_weights=True)
-
-save_best = keras.callbacks.ModelCheckpoint(save_model_path + new_model_name,
-                                            monitor='val_loss',
-                                            verbose=1,
-                                            save_best_only=True,
-                                            save_weights_only=False,
-                                            mode='min',
-                                            period=1)
-
-## --save as date--
 tensorboard_name = datetime.now().strftime("%Y%m%d-%H%M%S")
 
-tensorboard = keras.callbacks.TensorBoard(log_dir='C:\\ML\\Models\\CNN\\new\\' + tensorboard_name,
-                                          histogram_freq=0,
-                                          batch_size=batch_size,
-                                          write_graph=True,
-                                          write_grads=True,
-                                          write_images=True,
-                                          embeddings_freq=0,
-                                          embeddings_layer_names=None,
-                                          embeddings_metadata=None,
-                                          embeddings_data=None,
-                                          update_freq='batch')
-
-callback = [tensorboard, save_best, early_stop]
+tensorboard = tf.keras.callbacks.TensorBoard(log_dir=save_model_path + 'logs\\' + tensorboard_name,
+                                             histogram_freq=0,
+                                             write_graph=True,
+                                             write_images=True,
+                                             embeddings_freq=0,
+                                             embeddings_layer_names=None,
+                                             embeddings_metadata=None,
+                                             embeddings_data=None,
+                                             update_freq='batch')
 
 model.compile(loss='categorical_crossentropy',
               optimizer='adam',
               metrics=['acc'])
 
-steps_per_epoch = np.floor(gen_train.get_length_data() * (1 - val_size)) / batch_size
-val_steps_per_epoch = np.floor(gen_train.get_length_data() * val_size) / batch_size
+steps_per_epoch = int(np.floor(gen_train.get_length_data() * (1 - val_size)) / batch_size)
+val_steps_per_epoch = int(np.floor(gen_train.get_length_data() * val_size) / batch_size)
 
-history = model.fit_generator(train_gen,
-                              validation_data=val_gen,
-                              steps_per_epoch=steps_per_epoch,
-                              validation_steps=val_steps_per_epoch,
-                              epochs=100,
-                              callbacks=callback,
-                              verbose=1,
-                              use_multiprocessing=False)
+best_loss = 10000
+
+
+def show_confusion_matrix():
+    global cnt, x, y
+    conf_matrix = np.zeros((N_classes, N_classes))
+    cnt = 0
+    for x, y in val_gen:
+        for i in range(x.shape[0]):
+            pred = model.predict(np.expand_dims(x[i], 0))
+            pred = np.argmax(pred)
+            gt = np.argmax(y[i])
+            conf_matrix[pred, gt] = conf_matrix[pred, gt] + 1
+            cnt += 1
+        print(cnt, '/', val_steps_per_epoch * batch_size)
+        
+        if cnt > val_steps_per_epoch * batch_size:
+            break
+    df = pd.DataFrame(conf_matrix, index=os.listdir(train_path), columns=os.listdir(train_path))
+    plt.figure()
+    sb.heatmap(df, annot=True)
+    plt.show()
+
+
+def train_model():
+    global cnt, metrics_names, best_loss
+    for epoch in range(20):
+        model.reset_metrics()
+        
+        for cnt, (image_batch, label_batch) in enumerate(train_gen):
+            result = model.train_on_batch(image_batch, label_batch, reset_metrics=False)
+            metrics_names = model.metrics_names
+            print("batch: ",
+                  "{}/{}  ".format(cnt, steps_per_epoch),
+                  "train: ",
+                  "{}: {:.3f}".format(metrics_names[0], result[0]),
+                  "{}: {:.3f}".format(metrics_names[1], result[1]))
+            
+            if cnt >= steps_per_epoch:
+                break
+        
+        for cnt, (image_batch, label_batch) in enumerate(val_gen):
+            result = model.test_on_batch(image_batch, label_batch,
+                                         reset_metrics=False)
+            
+            if cnt >= val_steps_per_epoch:
+                break
+        
+        metrics_names = model.metrics_names
+        print("\neval: ",
+              "{}: {:.3f}".format(metrics_names[0], result[0]),
+              "{}: {:.3f}".format(metrics_names[1], result[1]))
+        
+        if best_loss > result[0]:
+            best_loss = result[0]
+            model.save(save_model_path + '/' + new_model_name + str(epoch), overwrite=False, save_format='h5')
+        
+        show_confusion_matrix()
+
+
+train_model()
+
+

@@ -4,7 +4,6 @@ import os
 import cv2
 import matplotlib.pyplot as plt
 from scipy import ndimage, math
-from class_utils import one_hot
 
 from tqdm import tqdm
 import dlib
@@ -12,6 +11,8 @@ import csv
 import requests
 
 from random import shuffle
+
+from classes.class_utils import one_hot
 
 
 class Generator:
@@ -184,7 +185,7 @@ class Generator:
                 # image_list = np.delete(image_list, choice, 0)
 
                 if i % self.batch_size == self.batch_size - 1:
-                    yield (self.X, self.Y)
+                    yield self.X, self.Y
 
     def flow_from_mem(self, set='train', augment_validation=True, fast_aug=True):
         if set == 'test':
