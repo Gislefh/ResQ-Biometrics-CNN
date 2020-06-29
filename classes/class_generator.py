@@ -82,6 +82,8 @@ class Generator:
             else:
                 N_val = int(len(os.listdir(self.path + '/' + folder)) * self.train_val_split)
 
+            #image_names = os.listdir(self.path + '/' + folder)
+            #np.random.shuffle(image_names)
             for image_ in os.listdir(self.path + '/' + folder):
                 if N_images_per_class != None:
                     if cnt_img_per_class > N_images_per_class:
@@ -131,14 +133,19 @@ class Generator:
         while True:
 
             image_list = tot_list.copy()
-            shuffle(choice_list)
+            np.random.shuffle(choice_list)
 
             for i in range(len(image_list)):
 
                 ##choose random image from list
                 # choice = np.random.choice(len(image_list[:, 0]))
                 choice = choice_list[i]
-                orig_ch = cv2.imread(image_list[choice, 0]).shape[-1]
+                tmp = cv2.imread(image_list[choice, 0])
+                if np.shape(tmp):
+                    orig_ch = tmp.shape[-1]
+                else:
+                    raise Exception("Can't open image:", image_list[choice, 0])
+
                 label = int(image_list[choice, 1])
 
                 if (orig_ch == 3) and (self.N_channels == 1):
